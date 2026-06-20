@@ -1,3 +1,3 @@
 # compton_satellite_sim
 
-Empty project.
+This repository is intentionally an empty project scaffold and currently contains only this README.
