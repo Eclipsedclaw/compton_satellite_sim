@@ -1,2 +1,3 @@
 # compton_satellite_sim
-geant4 simulation for compton camera
+
+This repository is intentionally an empty project scaffold and currently contains only this README.
