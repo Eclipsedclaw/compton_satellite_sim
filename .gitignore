@@ -1,0 +1,19 @@
+# Ignore all __pycache__ folders everywhere in the project
+**/__pycache__/
+build/
+run/
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+
+# Ignore all data
+*.txt
+*.png
+*.jpg
+*.jpeg
+*.dat
+*.h5
+*.root
+*.heprep

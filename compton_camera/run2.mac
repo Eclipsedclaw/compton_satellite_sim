@@ -1,0 +1,29 @@
+#/run/printProgress 0
+#/run/numberOfThreads 32
+/run/initialize
+# 设置入射粒子为伽马光子
+/gps/particle gamma
+#/process/em/verbose 3
+# 1. 设置粒子源类型为平面
+/gps/pos/type Plane
+
+# 2. 定义平面的位置和朝向
+# 平面中心在(0, 0, 0)，法线方向为Z轴正方向(0, 0, 1)
+# 这定义了一个位于XY平面的平面源
+/gps/pos/centre 0 0 -200 cm
+
+# 3. 设置粒子在平面上的分布为一个2cm x 2cm的正方形
+/gps/pos/shape Square
+/gps/pos/halfx 20 cm
+/gps/pos/halfy 20 cm
+
+# 4. 【修改部分】设置发射方向为Z轴正方向 (0, 0, 1)
+
+/gps/direction 1 0 1.732
+
+# 设置粒子能量为单能500 keV
+/gps/ene/type Mono 
+/gps/ene/mono 500 keV 
+
+# 运行100个事件
+/run/beamOn 1000000
