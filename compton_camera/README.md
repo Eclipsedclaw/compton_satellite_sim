@@ -6,9 +6,9 @@ This directory contains a Geant4-based toy model for a Compton camera style dete
 
 The simulation is built around the standard Geant4 B2a example structure and includes:
 
-- a custom detector geometry in `src/DetectorConstruction.cc`
-- a general particle source in `src/PrimaryGeneratorAction.cc`
-- hit collection and ROOT output through `src/Analysis.cc`
+- a custom detector geometry in [`src/DetectorConstruction.cc`](src/DetectorConstruction.cc)
+- a general particle source in [`src/PrimaryGeneratorAction.cc`](src/PrimaryGeneratorAction.cc)
+- hit collection and ROOT output through [`src/Analysis.cc`](src/Analysis.cc)
 - macro files for batch runs and visualization
 
 The default output file is `b1output.root`.
