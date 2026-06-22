@@ -1,11 +1,14 @@
 # Macro file for the visualization setting for the initialization phase 
 # of the B2 example when running in interactive mode
-#
+# @author Jiancheng Zeng
+# @date 2026 June 22
+
+/run/initialize
 
 # Use these open statements to open selected visualization
 #
 # Use this open statement to create an OpenGL view:
-/vis/open OGL 600x600-0+0
+#/vis/open OGL 600x600-0+0
 #
 # Use this open statement to create an OpenInventor view:
 #/vis/open OIX
@@ -16,7 +19,7 @@
 #
 # Use this open statement to create a .heprep file suitable for
 # viewing in HepRApp:
-#/vis/open HepRepFile
+/vis/open HepRepFile
 #
 # Use this open statement to create a .wrl file suitable for
 # viewing in a VRML viewer:
@@ -80,3 +83,15 @@
 #
 # For file-based drivers, use this to create an empty detector view:
 #/vis/viewer/flush
+
+
+/gps/particle mu-
+/gps/ene/type Mono
+/gps/ene/mono 250 MeV
+
+# transpassing YSO1 -> YSO2 -> LYSO
+/gps/pos/type Point
+/gps/pos/centre 0 0 -5 cm
+/gps/direction 0 0 1
+
+/run/beamOn 1
