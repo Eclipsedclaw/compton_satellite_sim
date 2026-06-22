@@ -44,7 +44,7 @@ This produces `G4Data0.heprep` in the build directory. If needed, you can launch
 ```bash
 java -jar /opt/HepRApp/HepRApp.jar G4Data0.heprep
 ```
-<img width="1202" height="822" alt="compton_sim_example" src="https://github.com/user-attachments/assets/4b82b63f-3046-4e0f-b00b-2a6ba9b420c2" />
+<img width="1168" height="808" alt="Screenshot 2026-06-22 at 11 51 25 AM" src="https://github.com/user-attachments/assets/72ac4f27-0fb2-45ac-8e89-8a65094d8a91" />
 
 Other macro files in this directory can be used the same way. The macros are the easiest place to change:
 
