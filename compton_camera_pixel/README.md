@@ -1,6 +1,6 @@
 # Compton Camera Toy Model
 
-This directory contains a Geant4-based toy model for a Compton camera style detector. The main executable is `exampleB2a`, and the geometry currently uses a layered setup with YSO and LYSO scintillators plus silicon and FR4 dead layers. Comparing to `../compton_camera` this model makes two LYSO layers slightly far away from each other
+This directory contains a Geant4-based toy model for a Compton camera style detector. The main executable is `exampleB2a`, and the geometry currently uses a layered setup with YSO and LYSO scintillators plus silicon and FR4 dead layers. Comparing to `../compton_camera` this model makes two LYSO layers pixelized.
 
 ## Overview
 
@@ -44,12 +44,11 @@ This produces `G4Data0.heprep` in the build directory. If needed, you can launch
 ```bash
 java -jar /opt/HepRApp/HepRApp.jar G4Data0.heprep
 ```
-<img width="1105" height="804" alt="Screenshot 2026-06-22 at 11 40 21 AM" src="https://github.com/user-attachments/assets/5226c7a3-566d-42bd-b498-fb8d26fb6544" />
+<img width="1202" height="822" alt="compton_sim_example" src="https://github.com/user-attachments/assets/4b82b63f-3046-4e0f-b00b-2a6ba9b420c2" />
 
-      
 Other macro files in this directory can be used the same way. The macros are the easiest place to change:
 
-- particle type (Currently this model only accept e+ e- gamma geantino neutron proton ion, will need to figure out and debug)
+- particle type
 - particle energy
 - source position and direction
 - number of events
