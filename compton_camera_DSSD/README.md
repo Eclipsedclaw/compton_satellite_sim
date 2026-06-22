@@ -1,6 +1,6 @@
 # Compton Camera Toy Model
 
-This directory contains a Geant4-based toy model for a Compton camera style detector. The main executable is `exampleB2a`, and the geometry currently uses a layered setup with YSO and LYSO scintillators plus silicon and FR4 dead layers.
+This directory contains a Geant4-based model for a multi-layer Compton camera detector. The main executable is `exampleB2a`, and the geometry currently uses 5 layers of Si detector and a layer of CZT detector at the bottom location.
 
 ## Overview
 
