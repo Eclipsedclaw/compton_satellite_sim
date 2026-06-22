@@ -5,7 +5,7 @@ This project is for compton camera geant4 simulation. Models are configured diff
 ## Compton camera prototype
 Simulation information under [`./compton_camera`](./compton_camera)
 
-<img src="https://github.com/user-attachments/assets/4b82b63f-3046-4e0f-b00b-2a6ba9b420c2" style="max-width:600px;height:auto;" alt="compton_sim_example" />
+<img src="https://github.com/user-attachments/assets/4b82b63f-3046-4e0f-b00b-2a6ba9b420c2" width="50%" alt="compton_sim_example" />
 
 ## Compton camera prototype with distanced geometry
 Simulation information under [`./compton_camera_distance`](./compton_camera_distance)
