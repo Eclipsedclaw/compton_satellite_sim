@@ -60,8 +60,7 @@ The generator uses Geant4 GPS, so you can also tune the source directly in the m
 
 The current detector model places three active scintillator layers along the beam axis:
 
-- two YSO layers
-- one LYSO layer
-- thin silicon and FR4 layers associated with each active layer
+- five Si layers
+- one CZT layer
 
 The layer spacing is configured in `src/DetectorConstruction.cc` and can be adjusted there.
