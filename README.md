@@ -1,6 +1,6 @@
 # compton_satellite_sim
-
-This project is for compton camera geant4 simulation. Models are configured differently in each folder
+New branch from jcding.
+This project is for compton camera geant4 simulation. Models are configured differently in each folder.
 
 ## Compton camera prototype
 Simulation information under [`./compton_camera`](./compton_camera)
