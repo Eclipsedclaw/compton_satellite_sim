@@ -103,8 +103,8 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes()
   G4Material* matCZT = G4Material::GetMaterial("CZT");
 
   // ── 世界体积 ────────────────────────────────────────────────────────────
-  G4double worldSizeXY = 20.0 * cm;
-  G4double worldSizeZ  = 40.0 * cm;
+  G4double worldSizeXY = 10.0 * m;
+  G4double worldSizeZ  = 30.0 * m;
   G4GeometryManager::GetInstance()->SetWorldMaximumExtent(worldSizeZ);
 
   auto worldS  = new G4Box("world", worldSizeXY/2, worldSizeXY/2, worldSizeZ/2);
@@ -225,6 +225,41 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes()
   }
   auto cztEnvVisAtt = new G4VisAttributes(false);
   cztEnvLV->SetVisAttributes(cztEnvVisAtt);
+
+  // ── 大气层（放置在探测器前方，模拟束流在空气中的传输） ──────────────────
+  // 使用已经定义的 air 材料（G4_AIR），不再重复声明
+  G4double atmosL = 10  * m;   // 横向尺寸，与探测器 Envelope 一致
+  G4double atmosZ = 10  * m;     // 厚度（沿束流方向），可改为外部参数
+
+  if (atmosZ > 0.0)
+  {
+      G4Box* solidAtmos = new G4Box("AtmosSolid",
+                                    atmosL * 0.5,
+                                    atmosL * 0.5,
+                                    atmosZ * 0.5);
+
+      G4LogicalVolume* logicAtmos = new G4LogicalVolume(solidAtmos,
+                                                        air,  // 直接使用已有的 air
+                                                        "AtmosLogical",
+                                                        0, 0, 0);
+
+      // 大气层放置在探测器上游：下表面（-Z 端）与探测器起始面 zStart 平齐
+      G4double atmosPosZ = zStart - 0.5 * atmosZ;
+
+      new G4PVPlacement(nullptr,
+                        G4ThreeVector(0.0, 0.0, atmosPosZ),
+                        logicAtmos,
+                        "Atmosphere",
+                        worldLV,          // 母体是世界
+                        false,
+                        0,
+                        fCheckOverlaps);
+
+      // 可视化：半透明浅蓝色，便于观察
+      G4VisAttributes* atmosVis = new G4VisAttributes(G4Colour(0.8, 0.8, 0.8, 0.1));
+      atmosVis->SetForceSolid(true);
+      logicAtmos->SetVisAttributes(atmosVis);
+  }
 
   // ── 可视化属性（填充色 + 黑色框线） ─────────────────────────────────────
   worldLV->SetVisAttributes(new G4VisAttributes(false));

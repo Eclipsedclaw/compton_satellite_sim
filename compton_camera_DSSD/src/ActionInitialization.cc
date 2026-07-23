@@ -31,6 +31,7 @@
 #include "PrimaryGeneratorAction.hh"
 #include "RunAction.hh"
 #include "EventAction.hh"
+#include "SteppingAction.hh"
 
 namespace B2
 {
@@ -43,14 +44,19 @@ void ActionInitialization::BuildForMaster() const
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
 void ActionInitialization::Build() const
 {
-  SetUserAction(new PrimaryGeneratorAction);
-  SetUserAction(new RunAction);
-  SetUserAction(new EventAction);
+    // 1. 创建 EventAction 并保存指针
+    EventAction* eventAction = new EventAction();
+    
+    // 2. 设置用户动作
+    SetUserAction(new PrimaryGeneratorAction);
+    SetUserAction(new RunAction);
+    SetUserAction(eventAction);
+    
+    // 3. 把 EventAction 传给 SteppingAction，实现能量累加联调
+    SetUserAction(new SteppingAction(eventAction));
 }
-
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 }
