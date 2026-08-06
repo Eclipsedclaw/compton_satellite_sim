@@ -1,7 +1,7 @@
 # ==========================================
 # 宏文件：运行 662 keV 伽马源，200,000 事例
 # ==========================================
-/run/setCut 0.01 mm
+
 # 1. 关闭终端刷屏
 /tracking/verbose 0
 /run/verbose 0
@@ -12,7 +12,7 @@
 # 3. 设置粒子源
 /gps/particle gamma
 /gps/energy 662 keV
-/gps/position 0 0 -10 cm
+/gps/position 0 0 -5 cm
 /gps/direction 0 0 1
 
 # 上半球各向同性发射
@@ -20,7 +20,7 @@
 #/gps/pos/centre 0 0 -10 cm
 #/gps/ang/type iso
 #/gps/ang/mintheta 0.0 deg
-#/gps/ang/maxtheta 15.0 deg
+#/gps/ang/maxtheta 90.0 deg
 
 # 4. 运行事例
-/run/beamOn 30
+/run/beamOn 200000

@@ -1,6 +1,8 @@
 import uproot
 import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # 非交互式后端，纯保存图片用
 import matplotlib.pyplot as plt
 import glob
 
@@ -9,6 +11,7 @@ import glob
 # ==========================================
 # 假设你的 ROOT 文件都命名为 efficiency_*.root
 particle = "gamma"
+# XeV = "MeV"
 file_pattern = f"./output_root/b1output_{particle}*.root"
 root_files = glob.glob(file_pattern)
 
@@ -63,7 +66,7 @@ def calculate_efficiency(group):
     
     # 返回该能量点下的平均能量和计算结果
     return pd.Series({
-        'Energy': group['Energy_MeV'].mean(),
+        'Energy': group[f'Energy_MeV'].mean(),
         'Eff_Total': eff_total,
         'Eff_Full': eff_full,
         'Eff_Partial': eff_partial,
@@ -73,16 +76,16 @@ def calculate_efficiency(group):
     })
 
 # 按 Energy_MeV 列进行分组并应用计算
-df_eff = df_all.groupby('Energy_MeV').apply(calculate_efficiency).reset_index(drop=True)
+df_eff = df_all.groupby(f'Energy_MeV').apply(calculate_efficiency).reset_index(drop=True)
 # 按能量大小对结果排序
 df_eff = df_eff.sort_values(by='Energy')
 print("数据分组计算完成！")
-
+# print(df_eff)
 # ==========================================
 # 第三步：绘制带误差棒的效率-能量关系图
 # ==========================================
 plt.figure(figsize=(10, 7))
-
+print("figure generated")
 # 画出三条曲线，使用 errorbar 添加物理误差棒
 plt.errorbar(df_eff['Energy'], df_eff['Eff_Total'], 
              yerr=df_eff['Err_Total'], fmt='o-', 
@@ -95,13 +98,13 @@ plt.errorbar(df_eff['Energy'], df_eff['Eff_Full'],
 plt.errorbar(df_eff['Energy'], df_eff['Eff_Partial'], 
              yerr=df_eff['Err_Partial'], fmt='^--', 
              capsize=4, label='Partial Absorption', color='blue')
-
+print("errorbar done")
 # 设置坐标轴为对数坐标（伽马探测器效率曲线标准画法）
 plt.xscale('log')
-plt.yscale('log')
+plt.yscale('linear')
 
 # 设置图像标签和标题
-plt.xlabel(r'Gamma Energy (MeV)', fontsize=14)
+plt.xlabel(f'Energy (MeV)', fontsize=14)
 plt.ylabel('Absolute Efficiency', fontsize=14)
 plt.title(f'Detector Efficiency vs Energy ({particle}, 5*Si+CZT) ', fontsize=16)
 plt.grid(True, which="both", ls="-", alpha=0.4)
@@ -109,6 +112,7 @@ plt.grid(True, which="both", ls="-", alpha=0.4)
 # 添加图例和保存图片
 plt.legend(fontsize=12, loc='best')
 plt.savefig(f'efficiency_curves_{particle}.png', dpi=600, bbox_inches='tight')
-plt.show()
+print("绘图完成")
+# plt.show()
 
-print(f"绘图完成！图像已保存为 'efficiency_curves_{particle}.png'")
+print(f"图像已保存为 'efficiency_curves_{particle}.png'")

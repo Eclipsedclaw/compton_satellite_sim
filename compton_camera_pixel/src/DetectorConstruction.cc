@@ -148,8 +148,8 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes()
   G4Material* matFR4   = G4Material::GetMaterial("FR4");
   G4Material* matBaSO4 = G4Material::GetMaterial("BaSO4");
 
-  G4double worldSizeXY = 10.0 * cm;
-  G4double worldSizeZ  = 20.0 * cm;
+  G4double worldSizeXY = 4.0 * m;
+  G4double worldSizeZ  = 10.0 * m;
   G4GeometryManager::GetInstance()->SetWorldMaximumExtent(worldSizeZ);
 
   auto worldS = new G4Box("world", worldSizeXY / 2, worldSizeXY / 2, worldSizeZ / 2);

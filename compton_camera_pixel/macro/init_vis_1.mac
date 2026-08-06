@@ -1,0 +1,29 @@
+# 1. 初始化探测器和物理引擎
+/run/initialize
+/vis/sceneHandler/create
+/vis/viewer/create
+/vis/drawVolume
+# 2. 启用轨迹绘制
+/vis/scene/add/trajectories
+
+# 3. 设置轨迹按电荷着色
+# 正电蓝、负电红、中性绿
+/vis/modeling/trajectories/create/drawByCharge
+
+# 4. 开启事件累积，防止新事件覆盖旧轨迹
+/vis/scene/endOfEventAction accumulate
+
+# 5.
+/gps/particle mu-
+/gps/energy 1 GeV
+
+/gps/pos/type Plane
+/gps/pos/shape Square
+/gps/pos/centre 0.0 0.0 -2.0 m
+
+/gps/pos/halfx 2.0 m
+/gps/pos/halfy 2.0 m
+
+/gps/ang/type iso
+/gps/ang/mintheta 0.0 deg
+/gps/ang/maxtheta 90.0 deg

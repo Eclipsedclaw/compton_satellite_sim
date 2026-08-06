@@ -1,8 +1,0 @@
-/tracking/verbose 0
-/run/verbose 0
-/run/initialize
-/gps/particle gamma
-/gps/position 0 0 -10 cm
-/gps/direction 0 0 1
-/gps/energy 0.100 MeV
-/run/beamOn 100000
