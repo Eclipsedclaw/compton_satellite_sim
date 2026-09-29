@@ -84,6 +84,11 @@ details.settings summary{cursor:pointer;font-weight:600;font-size:16px}
 @media (max-width:860px){.stage{grid-template-columns:1fr}.side{display:grid;grid-template-columns:1fr 1fr}}
 @media (max-width:560px){.side{grid-template-columns:1fr}.time-row{grid-template-columns:1fr auto}.time-row>div,.time-row>input{grid-column:1/-1;grid-row:2}.months .minor{display:none}header h1{font-size:23px}}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+
+.site-footer{margin-top:32px;padding-top:14px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.site-footer p{margin:0 0 4px;max-width:80ch}
+.site-footer a{color:var(--axis)}
+
 </style>
 </head>
 <body>
@@ -163,6 +168,29 @@ details.settings summary{cursor:pointer;font-weight:600;font-size:16px}
   <div class="buttons"><button type="button" id="apply" class="primary">Apply settings</button><button type="button" id="reset">Restore defaults</button></div>
   <p class="note">Model: circular orbit with J2 precession, camera axis at the local zenith, launch at the moment the site enters the orbital plane on a southbound pass. The circle for any date is reliable; the satellite's position along it far from launch is illustrative, since drag shifts the timing. SAA and Earth occultation are not included.</p>
 </details>
+
+<footer class="site-footer">
+  <p class="footer-contact">
+    Questions, bug reports or suggestions? Email
+    <a href="mailto:JCZeng1412@gmail.com?subject=Compton%20sky%20planner%20feedback">JCZeng1412@gmail.com</a>.
+  </p>
+
+  <p class="footer-meta">
+    Source code on GitHub: <a href="https://github.com/Eclipsedclaw/compton_satellite_sim" target="_blank" rel="noopener">https://github.com/Eclipsedclaw/compton_satellite_sim</a>
+  </p>
+
+  <p class="footer-meta">
+    Submit your issue or request through this link: <a href="https://github.com/Eclipsedclaw/compton_satellite_sim/issues" target="_blank" rel="noopener">https://github.com/Eclipsedclaw/compton_satellite_sim/issues</a>
+  </p>
+  
+  <p class="footer-meta"></p>
+    <a href="https://tdli.sjtu.edu.cn/en/people/45619" target="_blank" rel="noopener">https://tdli.sjtu.edu.cn/en/people/45619</a>, Tsung-Dao Lee Institute, 1 Lisuo Road, Pudong New Area, Shanghai, 201210
+  </p>
+
+  <p class="footer-meta">
+    Compton camera sky planner
+  </p>
+</footer>
 </div>
 
 <script>
