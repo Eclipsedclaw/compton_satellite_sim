@@ -41,7 +41,7 @@ import matplotlib.patheffects as pe
 ALT_KM      = 525.0
 INC_DEG     = 97.5
 LTDN_HOURS  = 10.5                 # 10:30
-LAUNCH_DATE = datetime(2026, 10, 1, tzinfo=timezone.utc)   # UTC date; time of day is computed
+LAUNCH_DATE = datetime(2026, 11, 1, tzinfo=timezone.utc)   # UTC date; time of day is computed
 
 # Jiuquan Satellite Launch Center (Ejin Banner, Inner Mongolia)
 SITE_NAME, SITE_LAT, SITE_LON = "QingDao", 36.5, 120

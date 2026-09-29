@@ -40,7 +40,7 @@ LTDN_HOURS = 10.5
 N_ORBITS        = 3
 TICK_EVERY_MIN  = 10
 N_MONTHS        = 12
-FOV_HALF_DEG    = 60.0
+FOV_HALF_DEG    = 20
 
 COORDS     = "equatorial"   # all-sky map frame: "equatorial" or "galactic"
 VIEW_ELEV  = 20             # 3D view angles [deg]
@@ -375,4 +375,4 @@ def plot_monthly():
 
 if __name__ == "__main__":
     plot_launch_day()
-    plot_monthly()
+    # plot_monthly()
