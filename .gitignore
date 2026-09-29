@@ -16,3 +16,4 @@ install_manifest.txt
 *.h5
 *.root
 *.heprep
+*.txt
