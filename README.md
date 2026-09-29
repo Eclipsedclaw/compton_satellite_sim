@@ -1,3 +1,6 @@
+# MeV celestial satellite trajactory
+to use it, go to github page: [https://eclipsedclaw.github.io/compton_satellite_sim/trajectory/trajectory.html](https://eclipsedclaw.github.io/compton_satellite_sim/trajectory/trajectory.html)
+
 # compton_satellite_sim
 
 This project is for compton camera geant4 simulation. Models are configured differently in each folder
