@@ -246,7 +246,7 @@ To change the defaults for all users, edit the `DEFAULTS` block in
 
 ```bash
 sudo mkdir -p /var/www/trajectory
-sudo cp -r trajectory.html css js /var/www/trajectory/
+sudo cp -r trajectory.html compsat.svg css js /var/www/trajectory/
 sudo chmod -R u=rwX,go=rX /var/www/trajectory
 ```
 
@@ -299,8 +299,8 @@ ssh -N -L 8081:localhost:8081 username@<server-address>
 Then open <http://localhost:8081/>. The page is available while the command is
 running.
 
-To update the page, copy `trajectory.html`, `css/` and `js/` over the old
-ones. No nginx restart is needed.
+To update the page, copy `trajectory.html`, `compsat.svg`, `css/` and `js/`
+over the old ones. No nginx restart is needed.
 
 ---
 
