@@ -8,7 +8,7 @@
 :root{
   --paper:#f3f5f8; --panel:#ffffff; --ink:#16223a; --muted:#5b6780; --line:#d5dbe5; --grid:#e3e7ee;
   --axis:#2f5bd3; --axis-soft:rgba(47,91,211,.14); --fov:#c76a12; --fov-soft:rgba(199,106,18,.16);
-  --sun:#f2b705; --off:#c9cfda; --focus:#2f5bd3;
+  --sun:#f2b705; --off:#c9cfda; --focus:#2f5bd3; --gc:#7b3fe4;
   box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
   color-scheme:light;
 }
@@ -16,13 +16,13 @@
   :root:not([data-theme="light"]){
     --paper:#0f1626; --panel:#16203a; --ink:#e6eaf2; --muted:#98a3ba; --line:#2a3550; --grid:#223050;
     --axis:#7596ff; --axis-soft:rgba(117,150,255,.18); --fov:#f0a04b; --fov-soft:rgba(240,160,75,.18);
-    --sun:#f5c518; --off:#2e3a57; --focus:#7596ff; color-scheme:dark;
+    --sun:#f5c518; --off:#2e3a57; --focus:#7596ff; --gc:#b794ff; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --paper:#0f1626; --panel:#16203a; --ink:#e6eaf2; --muted:#98a3ba; --line:#2a3550; --grid:#223050;
   --axis:#7596ff; --axis-soft:rgba(117,150,255,.18); --fov:#f0a04b; --fov-soft:rgba(240,160,75,.18);
-  --sun:#f5c518; --off:#2e3a57; --focus:#7596ff; color-scheme:dark;
+  --sun:#f5c518; --off:#2e3a57; --focus:#7596ff; --gc:#b794ff; color-scheme:dark;
 }
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -30,7 +30,10 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:system-ui,-ap
 .wrap{max-width:1240px;margin:0 auto;padding:20px 20px 40px}
 header h1{font-size:28px;font-weight:600;letter-spacing:-.01em;margin:0 0 2px}
 header p{margin:0;color:var(--muted);max-width:75ch}
-.stage{display:grid;grid-template-columns:minmax(0,2.1fr) minmax(0,1fr);gap:16px;margin-top:18px;align-items:start}
+.stage{display:grid;grid-template-columns:minmax(0,var(--left,2.1fr)) 10px minmax(0,var(--right,1fr));column-gap:3px;row-gap:16px;margin-top:18px;align-items:start}
+.splitter{align-self:stretch;cursor:col-resize;position:relative;touch-action:none;border-radius:5px}
+.splitter::after{content:"";position:absolute;left:50%;top:50%;width:4px;height:48px;margin:-24px 0 0 -2px;border-radius:2px;background:var(--line)}
+.splitter:hover::after,.splitter.dragging::after,.splitter:focus-visible::after{background:var(--axis)}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px}
 .map-panel{padding:10px 10px 6px;position:relative}
 #map{width:100%;aspect-ratio:2/1.02;display:block}
@@ -74,14 +77,18 @@ td.num{text-align:right}
 .field input,.field select{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:5px 8px;width:130px}
 details.settings{margin-top:28px;padding:12px 16px}
 details.settings summary{cursor:pointer;font-weight:600;font-size:16px}
-.grid-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:12px}
-.grid-fields .field input,.grid-fields .field select{width:100%}
+.settings-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px;margin-top:12px}
+.set-group{margin:0;padding:10px 14px 14px;border:1px solid var(--line);border-radius:8px;min-width:0}
+.set-group legend{padding:0 6px;font-size:13px;font-weight:600;color:var(--ink)}
+.grid-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:12px 16px;align-items:end}
+.grid-fields .field{min-width:0}
+.grid-fields .field input,.grid-fields .field select{box-sizing:border-box;width:100%;max-width:170px;min-width:0}
 .err{color:var(--fov);font-size:14px;margin-top:8px;min-height:1em}
 .note{font-size:13px;color:var(--muted);margin-top:14px;max-width:80ch}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);padding:2px 6px 4px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .sw{display:inline-block;width:16px;height:3px}
-@media (max-width:860px){.stage{grid-template-columns:1fr}.side{display:grid;grid-template-columns:1fr 1fr}}
+@media (max-width:860px){.stage{grid-template-columns:1fr}.splitter{display:none}.side{display:grid;grid-template-columns:1fr 1fr}}
 @media (max-width:560px){.side{grid-template-columns:1fr}.time-row{grid-template-columns:1fr auto}.time-row>div,.time-row>input{grid-column:1/-1;grid-row:2}.months .minor{display:none}header h1{font-size:23px}}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
 
@@ -89,6 +96,14 @@ details.settings summary{cursor:pointer;font-weight:600;font-size:16px}
 .site-footer p{margin:0 0 4px;max-width:80ch}
 .site-footer a{color:var(--axis)}
 
+/* ---------- pointing control ---------- */
+[hidden]{display:none !important}
+.point-row{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;align-items:center;margin-top:12px}
+.point-row>label{color:var(--muted);font-size:14px}
+.point-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.point-controls select,.point-controls input{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:5px 8px}
+.point-controls input{width:110px}
+@media (max-width:560px){.point-row{grid-template-columns:1fr;gap:6px}}
 </style>
 </head>
 <body>
@@ -102,13 +117,19 @@ details.settings summary{cursor:pointer;font-weight:600;font-size:16px}
   <div class="panel map-panel">
     <canvas id="map" aria-label="All-sky Mollweide map with the camera axis track, field of view, Sun and sources"></canvas>
     <div class="legend" aria-hidden="true">
-      <span><i class="sw" style="background:var(--axis)"></i>Camera-axis circle today</span>
-      <span><i class="sw" style="border-top:2px dashed var(--ink);height:0"></i>Edges of today's band</span>
+      <span id="legCircle"><i class="sw" style="background:var(--axis)"></i>Camera-axis circle today</span>
+      <span id="legBand"><i class="sw" style="border-top:2px dashed var(--ink);height:0"></i>Edges of today's band</span>
+      <span id="legEarth" hidden><i class="sw" style="background:var(--muted);opacity:.35;height:10px;width:14px;border-radius:2px"></i>Blocked by Earth now</span>
       <span><i class="sw" style="background:var(--fov)"></i>Field of view now</span>
+      <span><i class="sw" style="background:var(--sun);width:10px;height:10px;border-radius:50%;border:1px solid var(--ink)"></i>Sun</span>
+      <span><i class="sw" style="width:10px;height:10px;border-radius:50%;border:2px solid var(--gc)"></i>Galactic Center</span>
       <span><i class="sw" style="border-top:2px dotted var(--muted);height:0"></i><span id="refLabel">Galactic plane</span></span>
     </div>
     <div class="hoverline" id="hover">Hover over the map to read coordinates.</div>
   </div>
+  <div class="splitter" id="splitter" role="separator" aria-orientation="vertical"
+       aria-label="Drag to resize the map and side panels" aria-valuemin="40" aria-valuemax="85"
+       tabindex="0" title="Drag to resize, double-click to reset"></div>
   <div class="side">
     <div class="panel sphere-panel"><canvas id="sphere" aria-label="Celestial sphere, drag to rotate"></canvas></div>
     <div class="panel"><dl class="readout" id="readout"></dl></div>
@@ -126,6 +147,20 @@ details.settings summary{cursor:pointer;font-weight:600;font-size:16px}
     <input type="range" id="hour" min="0" max="24" step="0.01" value="0">
     <output id="hourOut" for="hour"></output>
   </div>
+  <div class="point-row">
+    <label for="pMode">Pointing</label>
+    <div class="point-controls">
+      <select id="pMode">
+        <option value="zenith">Zenith (away from Earth)</option>
+        <option value="sun">Track the Sun</option>
+        <option value="target">Fixed sky target</option>
+      </select>
+      <select id="pTarget" aria-label="Target" hidden></select>
+      <input id="pRa" type="number" step="any" min="0" max="360" placeholder="RA [deg]" aria-label="Target RA in degrees" hidden>
+      <input id="pDec" type="number" step="any" min="-90" max="90" placeholder="Dec [deg]" aria-label="Target Dec in degrees" hidden>
+      <button type="button" id="pApply" hidden>Point here</button>
+    </div>
+  </div>
   <div class="buttons">
     <button id="prev" type="button">−1 day</button>
     <button id="next" type="button">+1 day</button>
@@ -136,11 +171,47 @@ details.settings summary{cursor:pointer;font-weight:600;font-size:16px}
   </div>
 </div>
 
+<details class="panel settings" id="settings" open>
+  <summary>Orbit, instrument and launch settings</summary>
+  <div class="settings-groups">
+    <fieldset class="set-group">
+      <legend>Orbit</legend>
+      <div class="grid-fields">
+        <label class="field">Altitude [km]<input id="sAlt" type="number" step="1" min="200" max="2000"></label>
+        <label class="field">Inclination [deg]<input id="sInc" type="number" step="0.1" min="0" max="180"></label>
+        <label class="field" title="Local time of the descending node">Descending node, local time<input id="sLtdn" type="time" step="60"></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="set-group">
+      <legend>Launch</legend>
+      <div class="grid-fields">
+        <label class="field">Site name<input id="sSite"></label>
+        <label class="field">Latitude [deg]<input id="sLat" type="number" step="any" min="-90" max="90"></label>
+        <label class="field">Longitude [deg E]<input id="sLon" type="number" step="any" min="-180" max="360"></label>
+        <label class="field">Date (UTC)<input id="sDate" type="date"></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="set-group">
+      <legend>Instrument and display</legend>
+      <div class="grid-fields">
+        <label class="field">FoV half-angle [deg]<input id="sFov" type="number" step="1" min="1" max="90"></label>
+        <label class="field">Map coordinates<select id="sCoords"><option value="eq">Equatorial (RA, Dec)</option><option value="gal">Galactic (l, b)</option></select></label>
+      </div>
+    </fieldset>
+  </div>
+  <div class="err" id="err" role="alert"></div>
+  <div class="buttons"><button type="button" id="apply" class="primary">Apply settings</button><button type="button" id="reset">Restore defaults</button></div>
+  <p class="note">Model: circular orbit with J2 precession, launch at the moment the site enters the orbital plane on a southbound pass. The camera axis follows the pointing mode chosen above; Earth blocks a disk of radius asin(R<sub>E</sub>/(R<sub>E</sub>+h)) around the nadir. The sky circle for any date is reliable; the satellite's position along it far from launch is illustrative, since drag shifts the timing. The SAA is not included.</p>
+</details>
+
+
 <h2>Sources</h2>
-<p class="lede">Each strip covers one year from launch. A filled day means the source is inside the field-of-view band at some time that day. Click a strip to jump to that day.</p>
+<p class="lede">Each strip covers one year from launch. A filled day means the source is in the field of view, and not behind Earth, at some time that day; darker means more time in view. Click a strip to jump to that day. Flux is in units of 10<sup>−11</sup> erg cm<sup>−2</sup> s<sup>−1</sup>.</p>
 <div class="panel table-wrap">
   <table>
-    <thead><tr><th>Source</th><th>RA, Dec</th><th>Now</th><th style="width:44%">Days in band over the year</th><th class="num">Days</th><th></th></tr></thead>
+    <thead><tr><th>Source</th><th>RA, Dec</th><th class="num" title="Swift-BAT 14–195 keV, 10⁻¹¹ erg cm⁻² s⁻¹">F<sub>BAT</sub></th><th class="num" title="Fermi-LAT 4FGL-DR2, 10⁻¹¹ erg cm⁻² s⁻¹">F<sub>LAT</sub></th><th>Now</th><th style="width:40%">Days in view over the year</th><th class="num">Days</th><th class="num">Time in view</th><th></th></tr></thead>
     <tbody id="srcBody"></tbody>
   </table>
 </div>
@@ -148,26 +219,11 @@ details.settings summary{cursor:pointer;font-weight:600;font-size:16px}
   <label class="field">Name<input id="aName" required placeholder="e.g. Cas A"></label>
   <label class="field">RA [deg]<input id="aRa" type="number" step="any" min="0" max="360" required></label>
   <label class="field">Dec [deg]<input id="aDec" type="number" step="any" min="-90" max="90" required></label>
+  <label class="field">F<sub>BAT</sub> (optional)<input id="aFbat" type="number" step="any" min="0"></label>
+  <label class="field">F<sub>LAT</sub> (optional)<input id="aFlat" type="number" step="any" min="0"></label>
   <button type="submit">Add source</button>
 </form>
 
-<details class="panel settings" id="settings">
-  <summary>Orbit, instrument and launch settings</summary>
-  <div class="grid-fields">
-    <label class="field">Altitude [km]<input id="sAlt" type="number" step="1" min="200" max="2000"></label>
-    <label class="field">Inclination [deg]<input id="sInc" type="number" step="0.1" min="0" max="180"></label>
-    <label class="field">LTDN (local time of descending node)<input id="sLtdn" type="time" step="60"></label>
-    <label class="field">FoV half-angle [deg]<input id="sFov" type="number" step="1" min="1" max="90"></label>
-    <label class="field">Launch site<input id="sSite"></label>
-    <label class="field">Site latitude [deg]<input id="sLat" type="number" step="any" min="-90" max="90"></label>
-    <label class="field">Site longitude [deg E]<input id="sLon" type="number" step="any" min="-180" max="360"></label>
-    <label class="field">Launch date (UTC)<input id="sDate" type="date"></label>
-    <label class="field">Map coordinates<select id="sCoords"><option value="eq">Equatorial (RA, Dec)</option><option value="gal">Galactic (l, b)</option></select></label>
-  </div>
-  <div class="err" id="err" role="alert"></div>
-  <div class="buttons"><button type="button" id="apply" class="primary">Apply settings</button><button type="button" id="reset">Restore defaults</button></div>
-  <p class="note">Model: circular orbit with J2 precession, camera axis at the local zenith, launch at the moment the site enters the orbital plane on a southbound pass. The circle for any date is reliable; the satellite's position along it far from launch is illustrative, since drag shifts the timing. SAA and Earth occultation are not included.</p>
-</details>
 
 <footer class="site-footer">
   <p class="footer-contact">
@@ -182,13 +238,13 @@ details.settings summary{cursor:pointer;font-weight:600;font-size:16px}
   <p class="footer-meta">
     Submit your issue or request through this link: <a href="https://github.com/Eclipsedclaw/compton_satellite_sim/issues" target="_blank" rel="noopener">https://github.com/Eclipsedclaw/compton_satellite_sim/issues</a>
   </p>
-  
-  <p class="footer-meta"></p>
+
+  <p class="footer-meta">
     <a href="https://tdli.sjtu.edu.cn/en/people/45619" target="_blank" rel="noopener">https://tdli.sjtu.edu.cn/en/people/45619</a>, Tsung-Dao Lee Institute, 1 Lisuo Road, Pudong New Area, Shanghai, 201210
   </p>
 
   <p class="footer-meta">
-    Compton camera sky planner
+    Compton camera sky planner <span id="appVersion"></span>
   </p>
 </footer>
 </div>
@@ -200,12 +256,38 @@ const EQ2GAL = [[-0.0548755604,-0.8734370902,-0.4838350155],[0.4941094279,-0.444
 const DEFAULTS = {
   alt: 525, inc: 97.5, ltdn: 10.5, fov: 20, site: 'QingDao', lat: 36.5, lon: 120,
   date: '2026-11-01', coords: 'eq',
-  sources: [
-    ['Crab', 83.633, 22.015], ['Cyg X-1', 299.590, 35.202], ['Galactic Ctr', 266.417, -29.008],
-    ['Vela', 128.836, -45.176], ['Cen A', 201.365, -43.019], ['3C 273', 187.278, 2.052], ['3C 454.3', 343.491, 16.148]
+  pointing: 'zenith', target: ['Galactic Ctr', 266.417, -29.008],
+    sources: [
+    // name, RA, Dec, F_BAT (14-195 keV), F_LAT (4FGL-DR2)   [1e-11 erg cm^-2 s^-1]
+    // Values: Tsuji et al. 2021, ApJ 916, 28, Tables 1 and 2
+    ['Crab', 83.633, 22.015, 2300, 16],          // F_LAT: synchrotron nebula component only
+    ['Vela', 128.836, -45.176, 18, 940],
+    ['Geminga', 98.476, 17.770, null, null],
+    ['PSR B0656+14', 104.950, 14.239, null, null],
+    ['PSR B1055-52', 164.496, -52.450, null, null],
+    ['PSR B1509-58', 228.481, -59.136, 26, 5.3], // F_LAT of MSH 15-52 (extended)
+    ['PSR B1951+32', 298.3, 32.89, 0.92, 15],
+    ['Cyg X-1', 299.590, 35.202, 1700, 0.65],
+    ['LS 5039', 276.6, -14.85, 3.3, 27],
+    ['LSI +61 303', 40.16, 61.24, 3.2, 47],
+    ['3C 273', 187.278, 2.052, 42, 11],
+    ['3C 279', 194.1, -5.799, 3.9, 45],
+    ['3C 454.3', 343.491, 16.148, 16, 100],
+    ['CTA 102', 338.2, 11.71, 3.0, 49],
+    ['4C +21.35', 186.2, 21.4, 2.5, 20],
+    ['PKS 0208-512', 32.692, -51.017, null, null],
+    ['PKS 0528+134', 82.74, 13.57, 1.8, 2.2],
+    ['PKS 1622-297', 246.6, -29.86, 1.6, 3.9],
+    ['Cen A', 201.365, -43.019, 130, 6.3],
+    ['Galactic Ctr', 266.417, -29.008, 11, 42]
   ]
 };
-const KEY = 'compton-sky-planner-v1';
+
+// --------- state ----------
+const VERSION = '1.2';
+const KEY = 'compton-sky-planner-v' + VERSION;
+document.getElementById('appVersion').textContent = 'v' + VERSION;
+
 let S = JSON.parse(JSON.stringify(DEFAULTS));
 try { const s = localStorage.getItem(KEY); if (s) S = Object.assign(S, JSON.parse(s)); } catch (e) {}
 function persist(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
@@ -281,11 +363,30 @@ function smallCircle(ax, rDeg, n = 180){
   return out;
 }
 
+// ---------- pointing ----------
+const rho = () => Math.asin(RE / (RE + S.alt));            // Earth's angular radius seen from orbit
+function axisFor(ms, st){
+  if (S.pointing === 'sun') return sunVec(jd(ms));
+  if (S.pointing === 'target') return radec(S.target[1], S.target[2]);
+  return st.zen;
+}
+function pointingLabel(){
+  if (S.pointing === 'sun') return 'Sun';
+  if (S.pointing === 'target') return `${S.target[0]} (${S.target[1].toFixed(2)}°, ${S.target[2] >= 0 ? '+' : ''}${S.target[2].toFixed(2)}°)`;
+  return 'Zenith';
+}
+function pointingPhrase(){
+  if (S.pointing === 'sun') return 'camera tracking the Sun';
+  if (S.pointing === 'target') return `camera fixed on ${S.target[0]}`;
+  return 'zenith-pointing camera';
+}
+const angDeg = (a, b) => Math.acos(Math.max(-1, Math.min(1, dot(a, b)))) / D;
+
 // ---------- styles ----------
 let C = {};
 function readColors(){
   const cs = getComputedStyle(document.documentElement);
-  ['paper','panel','ink','muted','line','grid','axis','axis-soft','fov','fov-soft','sun','off'].forEach(k => C[k] = cs.getPropertyValue('--' + k).trim());
+  ['paper','panel','ink','muted','line','grid','axis','axis-soft','fov','fov-soft','sun','off','gc'].forEach(k => C[k] = cs.getPropertyValue('--' + k).trim());
 }
 function fit(cv){
   const r = cv.getBoundingClientRect(), d = devicePixelRatio || 1;
@@ -334,6 +435,59 @@ const eqLine = [...Array(361)].map((_, k) => radec(k, 0));
 const galPlane = [...Array(361)].map((_, k) => mtv(EQ2GAL, [Math.cos(k*D), Math.sin(k*D), 0]));
 function frameLine(lonDeg, latDeg){ const v = [Math.cos(latDeg*D)*Math.cos(lonDeg*D), Math.cos(latDeg*D)*Math.sin(lonDeg*D), Math.sin(latDeg*D)]; return S.coords === 'gal' ? mtv(EQ2GAL, v) : v; }
 
+let MASK = null;
+function hexRgb(h){ const m = /^#?([0-9a-f]{6})$/i.exec(h || ''); if (!m) return [128, 128, 128]; const n = parseInt(m[1], 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
+function buildMask(){
+  const f = 3, mw = Math.ceil(MAP.w / f), mh = Math.ceil(MAP.h / f);
+  const vecs = new Float32Array(mw * mh * 3), ok = new Uint8Array(mw * mh);
+  for (let j = 0; j < mh; j++) for (let i = 0; i < mw; i++) {
+    const v = unproj((i + 0.5) * f, (j + 0.5) * f), k = j * mw + i;
+    if (v) { ok[k] = 1; vecs[3*k] = v[0]; vecs[3*k+1] = v[1]; vecs[3*k+2] = v[2]; }
+  }
+  const cv = document.createElement('canvas'); cv.width = mw; cv.height = mh;
+  const ctx = cv.getContext('2d');
+  MASK = { f, mw, mh, vecs, ok, cv, ctx, img: ctx.createImageData(mw, mh), coords: S.coords, w: MAP.w, h: MAP.h };
+}
+function drawEarthMask(nadir){
+  if (!MASK || MASK.coords !== S.coords || MASK.w !== MAP.w || MASK.h !== MAP.h) buildMask();
+  const { mw, mh, vecs, ok, img, f } = MASK, d = img.data, cr = Math.cos(rho()), [r, g, b] = hexRgb(C.muted);
+  for (let k = 0; k < mw * mh; k++) {
+    const o = 4 * k, blocked = ok[k] && (vecs[3*k]*nadir[0] + vecs[3*k+1]*nadir[1] + vecs[3*k+2]*nadir[2]) >= cr;
+    d[o] = r; d[o+1] = g; d[o+2] = b; d[o+3] = blocked ? 80 : 0;
+  }
+  MASK.ctx.putImageData(img, 0, 0);
+  MAP.x.imageSmoothingEnabled = true;
+  MAP.x.drawImage(MASK.cv, 0, 0, mw * f, mh * f);
+}
+
+// ---------- Sun label and Galactic Center marker ----------
+const GC_VEC = radec(266.417, -29.008);
+const isGC = o => dot(o.v, GC_VEC) > Math.cos(0.5 * D);          // within 0.5° of Sgr A*
+function isDarkTheme(){ const [r, g, b] = hexRgb(C.paper); return r + g + b < 384; }
+function haloText(x, text, tx, ty, fill, halo, font, lw = 3.5){
+  x.font = font; x.lineJoin = 'round'; x.lineWidth = lw; x.strokeStyle = halo; x.strokeText(text, tx, ty);
+  x.fillStyle = fill; x.fillText(text, tx, ty);
+}
+function sunLabel(x, px, py, w, fs){
+  const flip = px > w - 60, dark = isDarkTheme();
+  x.textAlign = flip ? 'right' : 'left'; x.textBaseline = 'middle';
+  haloText(x, 'SUN', flip ? px - 12 : px + 12, py, C.sun, dark ? C.paper : C.ink, `800 ${fs}px ${FONT}`, dark ? 3.5 : 2.5);
+  x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+}
+function gcMarker(x, px, py, r, now, w, fs){
+  x.beginPath(); x.arc(px, py, r, 0, 7); x.fillStyle = now ? C.fov : C.panel; x.fill();
+  x.lineWidth = 2; x.strokeStyle = C.gc; x.stroke();
+  x.beginPath(); x.arc(px, py, r * 0.38, 0, 7); x.fillStyle = C.gc; x.fill();
+  x.beginPath();
+  for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) { x.moveTo(px + dx*r*1.15, py + dy*r*1.15); x.lineTo(px + dx*r*1.8, py + dy*r*1.8); }
+  x.stroke();
+  const flip = px > w - 120, tx = flip ? px - r*2 - 2 : px + r*2 + 2;
+  x.textAlign = flip ? 'right' : 'left';
+  haloText(x, 'Galactic Center', tx, py + r + fs, C.gc, C.panel, `700 ${fs}px ${FONT}`);
+  x.textAlign = 'left';
+}
+function gcNow(st){ return dot(GC_VEC, st.axis) >= Math.cos(S.fov * D) && dot(GC_VEC, st.nadir) < Math.cos(rho()); }
+
 function drawMap(st){
   const x = MAP.x, w = MAP.w, h = MAP.h, s = mapScale();
   x.clearRect(0, 0, w, h);
@@ -342,11 +496,17 @@ function drawMap(st){
   for (let b = -60; b <= 60; b += 30) strokeMap([...Array(181)].map((_, k) => frameLine(-180 + 2*k + 1e-6, b)), C.grid, 1);
   for (let l = 0; l < 360; l += 30) strokeMap([...Array(91)].map((_, k) => frameLine(l + 1e-6, -90 + 2*k)), C.grid, 1);
   strokeMap(S.coords === 'gal' ? eqLine : galPlane, C.muted, 1.5, [1.5, 3]);
-  // today's band edges and circle
-  for (const sg of [1, -1]) strokeMap(smallCircle(st.h.map(v => v*sg), 90 - S.fov, 240), C.ink, 1, [5, 4]);
-  strokeMap([...Array(241)].map((_, k) => orbitVec(k / 240 * 2 * Math.PI, st.raan)), C.axis, 2.5);
+  if (S.pointing === 'zenith') {
+    // today's band edges and circle
+    for (const sg of [1, -1]) strokeMap(smallCircle(st.h.map(v => v*sg), 90 - S.fov, 240), C.ink, 1, [5, 4]);
+    strokeMap([...Array(241)].map((_, k) => orbitVec(k / 240 * 2 * Math.PI, st.raan)), C.axis, 2.5);
+  } else {
+    // region of the sky hidden behind Earth right now
+    drawEarthMask(st.nadir);
+    strokeMap(smallCircle(st.nadir, rho() / D, 240), C.muted, 1);
+  }
   // FoV now
-  const fc = smallCircle(st.zen, S.fov, 120), q = fc.map(proj);
+  const fc = smallCircle(st.axis, S.fov, 120), q = fc.map(proj);
   const split = q.some((p, k) => k && Math.abs(p[2] - q[k-1][2]) > Math.PI);
   if (!split) { x.beginPath(); q.forEach((p, k) => k ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.closePath(); x.fillStyle = C['fov-soft']; x.fill(); }
   strokeMap(fc, C.fov, 2);
@@ -360,9 +520,11 @@ function drawMap(st){
   x.textAlign = 'left';
   // sun
   const sp = proj(st.sun); x.beginPath(); x.arc(sp[0], sp[1], 8, 0, 7); x.fillStyle = C.sun; x.fill(); x.strokeStyle = C.ink; x.lineWidth = 1; x.stroke();
+   sunLabel(x, sp[0], sp[1], w, 12);
   // sources
   x.font = `12px ${FONT}`;
   st.src.forEach(o => {
+    if (isGC(o)) return;
     const p = proj(o.v); star(x, p[0], p[1], o.now ? 9 : 7, o.now ? C.fov : o.band ? C.axis : C.panel, C.ink);
     const flip = p[0] > w - 80, tx = flip ? p[0] - 9 : p[0] + 9;
     x.textAlign = flip ? 'right' : 'left';
@@ -370,8 +532,9 @@ function drawMap(st){
     x.fillStyle = C.ink; x.fillText(o.name, tx, p[1] - 6);
     x.textAlign = 'left';
   });
+  const gp = proj(GC_VEC); gcMarker(x, gp[0], gp[1], 7, gcNow(st), w, 12);
   // camera axis
-  const zp = proj(st.zen); x.beginPath(); x.arc(zp[0], zp[1], 5.5, 0, 7); x.fillStyle = C.axis; x.fill(); x.strokeStyle = C.panel; x.lineWidth = 2; x.stroke();
+  const zp = proj(st.axis); x.beginPath(); x.arc(zp[0], zp[1], 5.5, 0, 7); x.fillStyle = C.axis; x.fill(); x.strokeStyle = C.panel; x.lineWidth = 2; x.stroke();
 }
 function star(x, cx, cy, r, fill, stroke){
   x.beginPath();
@@ -399,16 +562,22 @@ function drawSphere(st){
   for (let l = 0; l < 360; l += 30) line([...Array(61)].map((_, k) => radec(l, -90 + k*3)), C.grid, 1);
   line(eqLine, C.muted, 1.2);
   line(galPlane, C.muted, 1.5, [1.5, 3]);
-  for (const sg of [1, -1]) line(smallCircle(st.h.map(v => v*sg), 90 - S.fov, 180), C.ink, 1, [5, 4]);
-  line([...Array(181)].map((_, k) => orbitVec(k / 180 * 2 * Math.PI, st.raan)), C.axis, 2.5);
-  line(smallCircle(st.zen, S.fov, 90), C.fov, 2);
+  if (S.pointing === 'zenith') {
+    for (const sg of [1, -1]) line(smallCircle(st.h.map(v => v*sg), 90 - S.fov, 180), C.ink, 1, [5, 4]);
+    line([...Array(181)].map((_, k) => orbitVec(k / 180 * 2 * Math.PI, st.raan)), C.axis, 2.5);
+  } else {
+    line(smallCircle(st.nadir, rho() / D, 180), C.muted, 2);
+  }
+  line(smallCircle(st.axis, S.fov, 90), C.fov, 2);
   const np = P([0,0,1]); x.fillStyle = C.muted; x.font = `11px ${FONT}`;
   if (np[2] >= 0) x.fillText('N pole', np[0] + 5, np[1] - 4);
   [[0, '0h'], [90, '6h'], [180, '12h'], [270, '18h']].forEach(([ra, t]) => { const q = P(radec(ra, 0)); if (q[2] >= 0) x.fillText(t, q[0] + 3, q[1] + 12); });
   const sq = P(st.sun); x.globalAlpha = sq[2] >= 0 ? 1 : 0.3; x.beginPath(); x.arc(sq[0], sq[1], 7, 0, 7); x.fillStyle = C.sun; x.fill(); x.strokeStyle = C.ink; x.stroke(); x.globalAlpha = 1;
+  if (sq[2] >= 0) sunLabel(x, sq[0], sq[1], w, 11);
   x.font = `11px ${FONT}`;
-  st.src.forEach(o => { const q = P(o.v); if (q[2] < 0) return; star(x, q[0], q[1], o.now ? 8 : 6, o.now ? C.fov : o.band ? C.axis : C.panel, C.ink); x.fillStyle = C.ink; x.fillText(o.name, q[0] + 7, q[1] - 5); });
-  const zq = P(st.zen); x.globalAlpha = zq[2] >= 0 ? 1 : 0.35; x.beginPath(); x.arc(zq[0], zq[1], 5.5, 0, 7); x.fillStyle = C.axis; x.fill(); x.strokeStyle = C.panel; x.lineWidth = 2; x.stroke(); x.globalAlpha = 1;
+  st.src.forEach(o => { if (isGC(o)) return; const q = P(o.v); if (q[2] < 0) return; star(x, q[0], q[1], o.now ? 8 : 6, o.now ? C.fov : o.band ? C.axis : C.panel, C.ink); x.fillStyle = C.ink; x.fillText(o.name, q[0] + 7, q[1] - 5); });
+  const gq = P(GC_VEC); if (gq[2] >= 0) gcMarker(x, gq[0], gq[1], 6, gcNow(st), w, 11);
+  const zq = P(st.axis); x.globalAlpha = zq[2] >= 0 ? 1 : 0.35; x.beginPath(); x.arc(zq[0], zq[1], 5.5, 0, 7); x.fillStyle = C.axis; x.fill(); x.strokeStyle = C.panel; x.lineWidth = 2; x.stroke(); x.globalAlpha = 1;
 }
 let drag = null;
 sphCv.addEventListener('pointerdown', e => { drag = [e.clientX, e.clientY, az, el]; sphCv.setPointerCapture(e.pointerId); });
@@ -416,18 +585,30 @@ sphCv.addEventListener('pointermove', e => { if (!drag) return; az = drag[2] - (
 sphCv.addEventListener('pointerup', () => drag = null);
 
 // ---------- year strips ----------
-let yearBand = [];
+// yearSeen[s][d] = 1 if source s is in view at some time on day d
+// yearFrac[s][d] = fraction of an orbit (around noon UTC) the source is in view and not behind Earth
+let yearSeen = [], yearFrac = [], fracMax = 0;
 function computeYear(){
-  const sinF = Math.sin(S.fov * D);
-  yearBand = S.sources.map(([, ra, dec]) => {
-    const v = radec(ra, dec), arr = new Uint8Array(365);
-    for (let d = 0; d < 365; d++) {
-      let seen = 0;
-      for (const hh of [0, 6, 12, 18]) { const st = at(O.day0 + (d * 24 + hh) * 3.6e6); if (Math.abs(dot(v, st.h)) <= sinF) { seen = 1; break; } }
-      arr[d] = seen;
+  const sinF = Math.sin(S.fov * D), cf = Math.cos(S.fov * D), cr = Math.cos(rho()), K = 48;
+  const vs = S.sources.map(([, ra, dec]) => radec(ra, dec));
+  yearSeen = vs.map(() => new Uint8Array(365));
+  yearFrac = vs.map(() => new Float32Array(365));
+  for (let d = 0; d < 365; d++) {
+    if (S.pointing === 'zenith') {
+      for (const hh of [0, 6, 12, 18]) {
+        const st = at(O.day0 + (d * 24 + hh) * 3.6e6);
+        vs.forEach((v, s) => { if (Math.abs(dot(v, st.h)) <= sinF) yearSeen[s][d] = 1; });
+      }
     }
-    return arr;
-  });
+    const mid = O.day0 + (d * 24 + 12) * 3.6e6;
+    for (let k = 0; k < K; k++) {
+      const ms = mid + (k / K - 0.5) * O.P * 1000, st = at(ms), ax = axisFor(ms, st);
+      vs.forEach((v, s) => { if (dot(v, ax) >= cf && -dot(v, st.zen) < cr) yearFrac[s][d] += 1 / K; });
+    }
+    if (S.pointing !== 'zenith') vs.forEach((v, s) => { if (yearFrac[s][d] > 0) yearSeen[s][d] = 1; });
+  }
+  fracMax = 0;
+  yearFrac.forEach(a => a.forEach(f => { if (f > fracMax) fracMax = f; }));
 }
 
 // ---------- UI ----------
@@ -440,14 +621,29 @@ function nowMs(){ return O.day0 + (+dayEl.value * 24 + +hourEl.value) * 3.6e6; }
 function state(){
   const ms = nowMs(), st = at(ms);
   st.ms = ms; st.sun = sunVec(jd(ms));
-  const cf = Math.cos(S.fov * D), sf = Math.sin(S.fov * D);
-  st.src = S.sources.map(([name, ra, dec]) => { const v = radec(ra, dec); return { name, ra, dec, v, now: dot(v, st.zen) >= cf, band: Math.abs(dot(v, st.h)) <= sf, off: Math.acos(Math.max(-1, Math.min(1, dot(v, st.zen)))) / D }; });
+  st.axis = axisFor(ms, st);
+  st.nadir = st.zen.map(v => -v);
+  const cf = Math.cos(S.fov * D), sf = Math.sin(S.fov * D), cr = Math.cos(rho());
+  st.src = S.sources.map(([name, ra, dec]) => {
+    const v = radec(ra, dec), inFov = dot(v, st.axis) >= cf, occ = dot(v, st.nadir) >= cr;
+    return { name, ra, dec, v, inFov, occ, now: inFov && !occ,
+             band: S.pointing === 'zenith' ? Math.abs(dot(v, st.h)) <= sf : inFov,
+             off: angDeg(v, st.axis) };
+  });
+  st.axisBlocked = dot(st.axis, st.nadir) >= cr;
+  st.earthInFov = angDeg(st.axis, st.nadir) < rho() / D + S.fov;
+  let clear = 0; const K = 72;
+  for (let k = 0; k < K; k++) {
+    const t = ms + (k / K - 0.5) * O.P * 1000, s2 = at(t), ax = axisFor(t, s2);
+    if (-dot(ax, s2.zen) < cr) clear++;
+  }
+  st.clearFrac = clear / K;
   return st;
 }
 
 function renderReadout(st){
   const d = new Date(st.ms), bj = new Date(st.ms + 8 * 3.6e6);
-  const sunAng = Math.acos(Math.max(-1, Math.min(1, dot(st.sun, st.zen)))) / D;
+  const sunAng = angDeg(st.sun, st.axis);
   const lon = wrap180(Math.atan2(st.zen[1], st.zen[0]) / D - gmst(jd(st.ms)));
   const lat = Math.asin(st.zen[2]) / D;
   const inNow = st.src.filter(o => o.now).map(o => o.name).join(', ') || 'none';
@@ -456,6 +652,10 @@ function renderReadout(st){
     <dt>Beijing time</dt><dd>${pad(bj.getUTCHours())}:${pad(bj.getUTCMinutes())}</dd>
     <dt>Since launch</dt><dd>${elapsed < 0 ? 'before launch' : elapsed.toFixed(1) + ' days'}</dd>
     <dt>Satellite over</dt><dd>${Math.abs(lat).toFixed(1)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lon).toFixed(1)}° ${lon >= 0 ? 'E' : 'W'}</dd>
+    <dt>Pointing</dt><dd>${pointingLabel().replace(/</g, '&lt;')}</dd>
+    ${S.pointing === 'zenith' ? '' : `<dt>Axis behind Earth now</dt><dd>${st.axisBlocked ? 'yes' : 'no'}</dd>
+    <dt>Axis clear this orbit</dt><dd>${(st.clearFrac * 100).toFixed(0)}%</dd>`}
+    <dt>Earth in field of view</dt><dd>${st.earthInFov ? 'yes' : 'no'}</dd>
     <dt>Sun from camera axis</dt><dd>${sunAng.toFixed(1)}°</dd>
     <dt>In field of view</dt><dd>${inNow.replace(/</g, '&lt;')}</dd>`;
 }
@@ -465,29 +665,44 @@ function renderTable(st){
   if (tb.children.length !== S.sources.length) buildTable();
   st.src.forEach((o, k) => {
     const row = tb.children[k];
-    row.querySelector('.state').innerHTML = o.now ? '<span class="chip now">in view now</span>' : o.band ? '<span class="chip band">in band today</span>' : `<span class="chip">${o.off.toFixed(0)}° away</span>`;
-    drawStrip(row.querySelector('canvas'), yearBand[k]);
+    row.querySelector('.state').innerHTML = o.now ? '<span class="chip now">in view now</span>'
+      : (o.inFov && o.occ) ? '<span class="chip">behind Earth</span>'
+      : (S.pointing === 'zenith' && o.band) ? '<span class="chip band">in band today</span>'
+      : `<span class="chip">${o.off.toFixed(0)}° away</span>`;
+    drawStrip(row.querySelector('canvas'), yearSeen[k], yearFrac[k]);
   });
+}
+function fmtFlux(v){
+  if (v == null || !isFinite(v)) return '—';
+  return (v !== 0 && (Math.abs(v) < 0.01 || Math.abs(v) >= 1e4)) ? v.toExponential(2) : v.toPrecision(3);
 }
 function buildTable(){
   const tb = $('srcBody'); tb.innerHTML = '';
-  S.sources.forEach(([name, ra, dec], k) => {
+  S.sources.forEach(([name, ra, dec, fBat, fLat], k) => {
     const tr = document.createElement('tr');
-    const n = yearBand[k] ? yearBand[k].reduce((a, b) => a + b, 0) : 0;
-    tr.innerHTML = `<td></td><td>${ra.toFixed(2)}°, ${dec >= 0 ? '+' : ''}${dec.toFixed(2)}°</td><td class="state"></td>
-      <td><canvas class="strip" aria-label="Days in band over the year"></canvas></td><td class="num">${n}</td>
+    const n = yearSeen[k] ? yearSeen[k].reduce((a, b) => a + b, 0) : 0;
+    const avg = yearFrac[k] ? yearFrac[k].reduce((a, b) => a + b, 0) / 365 * 100 : 0;
+    tr.innerHTML = `<td></td><td>${ra.toFixed(2)}°, ${dec >= 0 ? '+' : ''}${dec.toFixed(2)}°</td><td class="num">${fmtFlux(fBat)}</td><td class="num">${fmtFlux(fLat)}</td><td class="state"></td>
+      <td><canvas class="strip" aria-label="Days in band over the year"></canvas></td><td class="num">${n}</td><td class="num">${avg.toFixed(1)}%</td>
       <td><button class="rm" type="button" aria-label="Remove source">✕</button></td>`;
     tr.children[0].textContent = name;
-    tr.querySelector('.rm').addEventListener('click', () => { S.sources.splice(k, 1); persist(); computeYear(); buildTable(); render(); });
+    tr.querySelector('.rm').addEventListener('click', () => { S.sources.splice(k, 1); persist(); computeYear(); buildTable(); fillPointing(); render(); });
     const cv = tr.querySelector('canvas');
     cv.addEventListener('click', e => { const r = cv.getBoundingClientRect(); dayEl.value = Math.min(364, Math.floor((e.clientX - r.left) / r.width * 365)); render(); });
     tb.appendChild(tr);
   });
 }
-function drawStrip(cv, arr){
+function drawStrip(cv, seen, frac){
   const F = fit(cv), x = F.x, cw = F.w / 365;
   x.clearRect(0, 0, F.w, F.h);
-  for (let d = 0; d < 365; d++) { x.fillStyle = arr[d] ? C.axis : C.off; x.fillRect(d * cw, 3, Math.max(cw, 1) + 0.3, F.h - 6); }
+  for (let d = 0; d < 365; d++) {
+    x.fillStyle = C.off; x.fillRect(d * cw, 3, Math.max(cw, 1) + 0.3, F.h - 6);
+    if (seen[d]) {
+      x.globalAlpha = fracMax > 0 ? 0.35 + 0.65 * Math.min(1, frac[d] / fracMax) : 0.35;
+      x.fillStyle = C.axis; x.fillRect(d * cw, 3, Math.max(cw, 1) + 0.3, F.h - 6);
+      x.globalAlpha = 1;
+    }
+  }
   for (let m = 0; m < 12; m++) {
     const t = new Date(O.day0); t.setUTCMonth(t.getUTCMonth() + m, 1); const d = Math.round((t - O.day0) / 864e5);
     if (d > 0 && d < 365) { x.fillStyle = C.panel; x.fillRect(d * cw - 0.5, 3, 1, F.h - 6); }
@@ -520,8 +735,10 @@ function render(){
 function summary(){
   const lt = `${pad(Math.floor(S.ltdn))}:${pad(Math.round(S.ltdn % 1 * 60))}`;
   const l = new Date(O.t0), bj = new Date(O.t0 + 8 * 3.6e6);
-  $('summary').textContent = `${S.alt} km, inclination ${S.inc}°, descending node at ${lt} local time, zenith-pointing camera with a ±${S.fov}° field of view. Launch from ${S.site} (${S.lat}°, ${S.lon}°) at ${fmtUTC(l)} UTC, ${pad(bj.getUTCHours())}:${pad(bj.getUTCMinutes())} Beijing time. Period ${(O.P/60).toFixed(1)} min.`;
+  $('summary').textContent = `${S.alt} km, inclination ${S.inc}°, descending node at ${lt} local time, ${pointingPhrase()} with a ±${S.fov}° field of view. Launch from ${S.site} (${S.lat}°, ${S.lon}°) at ${fmtUTC(l)} UTC, ${pad(bj.getUTCHours())}:${pad(bj.getUTCMinutes())} Beijing time. Period ${(O.P/60).toFixed(1)} min.`;
   $('refLabel').textContent = S.coords === 'gal' ? 'Celestial equator' : 'Galactic plane';
+  const z = S.pointing === 'zenith';
+  $('legCircle').hidden = !z; $('legBand').hidden = !z; $('legEarth').hidden = z;
 }
 
 function setup(){
@@ -547,13 +764,50 @@ $('apply').addEventListener('click', () => {
   if (!setup()) { Object.assign(S, old); setup(); return; }
   persist(); goLaunch();
 });
-$('reset').addEventListener('click', () => { S = JSON.parse(JSON.stringify(DEFAULTS)); persist(); fillSettings(); setup(); goLaunch(); });
+$('reset').addEventListener('click', () => { S = JSON.parse(JSON.stringify(DEFAULTS)); persist(); fillSettings(); fillPointing(); setup(); goLaunch(); });
+
+function fillPointing(){
+  const sel = $('pTarget'); sel.innerHTML = '';
+  S.sources.forEach(([n], k) => { const o = document.createElement('option'); o.value = String(k); o.textContent = n; sel.appendChild(o); });
+  const c = document.createElement('option'); c.value = 'custom'; c.textContent = 'Custom RA/Dec…'; sel.appendChild(c);
+  const idx = S.sources.findIndex(t => t[0] === S.target[0] && Math.abs(t[1] - S.target[1]) < 1e-6 && Math.abs(t[2] - S.target[2]) < 1e-6);
+  sel.value = idx >= 0 ? String(idx) : 'custom';
+  if (idx < 0) { $('pRa').value = S.target[1]; $('pDec').value = S.target[2]; }
+  $('pMode').value = S.pointing;
+  updatePointingUI();
+}
+function updatePointingUI(){
+  const t = $('pMode').value === 'target', c = t && $('pTarget').value === 'custom';
+  $('pTarget').hidden = !t;
+  ['pRa', 'pDec', 'pApply'].forEach(id => $(id).hidden = !c);
+}
+function applyPointing(){
+  const mode = $('pMode').value;
+  if (mode === 'target') {
+    const v = $('pTarget').value;
+    if (v === 'custom') {
+      const ra = parseFloat($('pRa').value), dec = parseFloat($('pDec').value);
+      if (!isFinite(ra) || !isFinite(dec)) { $('status').textContent = 'Enter the target RA and Dec in degrees, then press Point here.'; return; }
+      S.target = ['Custom target', mod(ra, 360), Math.max(-90, Math.min(90, dec))];
+    } else {
+      S.target = S.sources[+v].slice();
+    }
+  }
+  S.pointing = mode;
+  $('status').textContent = '';
+  persist(); computeYear(); buildTable(); summary(); render();
+}
+$('pMode').addEventListener('change', () => { updatePointingUI(); if ($('pMode').value !== 'target' || $('pTarget').value !== 'custom') applyPointing(); });
+$('pTarget').addEventListener('change', () => { updatePointingUI(); if ($('pTarget').value !== 'custom') applyPointing(); });
+$('pApply').addEventListener('click', applyPointing);
 $('addForm').addEventListener('submit', e => {
   e.preventDefault();
   const ra = parseFloat($('aRa').value), dec = parseFloat($('aDec').value), name = $('aName').value.trim();
   if (!name || !isFinite(ra) || !isFinite(dec)) return;
-  S.sources.push([name, mod(ra, 360), Math.max(-90, Math.min(90, dec))]); persist();
-  e.target.reset(); computeYear(); buildTable(); render();
+  const fb = parseFloat($('aFbat').value), fl = parseFloat($('aFlat').value);
+  S.sources.push([name, mod(ra, 360), Math.max(-90, Math.min(90, dec)),
+                  isFinite(fb) ? fb : null, isFinite(fl) ? fl : null]); persist();
+  e.target.reset(); computeYear(); buildTable(); fillPointing(); render();
 });
 
 dayEl.addEventListener('input', render); hourEl.addEventListener('input', render);
@@ -567,7 +821,7 @@ $('play').addEventListener('click', () => {
   playing = setInterval(() => { let d = +dayEl.value + 1; if (d > 365) d = 0; dayEl.value = d; render(); }, 180);
 });
 document.addEventListener('keydown', e => {
-  if (e.target.matches('input, select, textarea')) return;
+    if (e.target.matches('input, select, textarea, .splitter')) return;
   if (e.key === 'ArrowRight') { dayEl.value = Math.min(365, +dayEl.value + 1); render(); }
   if (e.key === 'ArrowLeft') { dayEl.value = Math.max(0, +dayEl.value - 1); render(); }
   if (e.key === 'ArrowUp') { hourEl.value = mod(+hourEl.value + 0.5, 24); render(); }
@@ -578,7 +832,7 @@ mapCv.addEventListener('pointermove', e => {
   if (!v) { $('hover').textContent = 'Hover over the map to read coordinates.'; return; }
   const ra = mod(Math.atan2(v[1], v[0]) / D, 360), dec = Math.asin(v[2]) / D;
   const g = mv(EQ2GAL, v), l = mod(Math.atan2(g[1], g[0]) / D, 360), b = Math.asin(g[2]) / D;
-  const st = at(nowMs()), off = Math.acos(Math.max(-1, Math.min(1, dot(v, st.zen)))) / D;
+  const ms = nowMs(), st = at(ms), off = angDeg(v, axisFor(ms, st));
   $('hover').textContent = `RA ${(ra/15).toFixed(2)}h (${ra.toFixed(1)}°), Dec ${dec >= 0 ? '+' : ''}${dec.toFixed(1)}°; l ${l.toFixed(1)}°, b ${b >= 0 ? '+' : ''}${b.toFixed(1)}°; ${off.toFixed(1)}° from the camera axis`;
 });
 mapCv.addEventListener('pointerleave', () => $('hover').textContent = 'Hover over the map to read coordinates.');
@@ -597,7 +851,7 @@ $('save').addEventListener('click', async () => {
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d');
   x.fillStyle = C.panel; x.fillRect(0, 0, W, H);
   x.fillStyle = C.ink; x.font = `600 ${16*scale}px ${FONT}`;
-  x.fillText(`${S.site} launch, camera axis on ${fmtUTC(d)} UTC (FoV ±${S.fov}°)`, 14*scale, 26*scale);
+  x.fillText(`${S.site} launch, ${fmtUTC(d)} UTC, pointing: ${pointingLabel()} (FoV ±${S.fov}°)`, 14*scale, 26*scale);
   x.fillStyle = C.muted; x.font = `${12*scale}px ${FONT}`;
   x.fillText(`In field of view: ${st.src.filter(o => o.now).map(o => o.name).join(', ') || 'none'}   In today's band: ${st.src.filter(o => o.band).map(o => o.name).join(', ') || 'none'}`, 14*scale, 46*scale);
   x.drawImage(mapCv, 0, 0, mapCv.width, mapCv.height, 10*scale, 60*scale, MAP.w*scale, MAP.h*scale);
@@ -610,10 +864,42 @@ $('save').addEventListener('click', async () => {
 function resize(){ MAP = fit(mapCv); SPH = fit(sphCv); render(); }
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readColors(); render(); });
 new MutationObserver(() => { readColors(); render(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-readColors(); fillSettings();
+readColors(); fillSettings(); fillPointing();
 if (!setup()) { S = JSON.parse(JSON.stringify(DEFAULTS)); fillSettings(); setup(); }
 MAP = fit(mapCv); SPH = fit(sphCv);
 goLaunch();
+
+// ---------- resizable panels ----------
+const stageEl = document.querySelector('.stage'), splitEl = $('splitter');
+const SPLIT_KEY = KEY + '-split', SPLIT_DEFAULT = 2.1 / 3.1;
+function setSplit(r){
+  r = Math.min(0.85, Math.max(0.4, r));          // map gets 40–85% of the width
+  stageEl.style.setProperty('--left', r + 'fr');
+  stageEl.style.setProperty('--right', (1 - r) + 'fr');
+  splitEl.setAttribute('aria-valuenow', Math.round(r * 100));
+  return r;
+}
+let splitR = SPLIT_DEFAULT;
+try { const v = parseFloat(localStorage.getItem(SPLIT_KEY)); if (isFinite(v)) splitR = v; } catch (e) {}
+splitR = setSplit(splitR);
+const saveSplit = () => { try { localStorage.setItem(SPLIT_KEY, String(splitR)); } catch (e) {} };
+splitEl.addEventListener('pointerdown', e => {
+  e.preventDefault(); splitEl.setPointerCapture(e.pointerId); splitEl.classList.add('dragging');
+  const move = ev => { const r = stageEl.getBoundingClientRect(); splitR = setSplit((ev.clientX - r.left) / r.width); };
+  const up = () => { splitEl.removeEventListener('pointermove', move); splitEl.removeEventListener('pointerup', up); splitEl.classList.remove('dragging'); saveSplit(); };
+  splitEl.addEventListener('pointermove', move); splitEl.addEventListener('pointerup', up);
+});
+splitEl.addEventListener('dblclick', () => { splitR = setSplit(SPLIT_DEFAULT); saveSplit(); });
+splitEl.addEventListener('keydown', e => {
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  e.preventDefault(); splitR = setSplit(splitR + (e.key === 'ArrowRight' ? 0.02 : -0.02)); saveSplit();
+});
+// redraw the canvases sharply whenever their size changes
+if (window.ResizeObserver) {
+  const ro = new ResizeObserver(() => { MAP = fit(mapCv); SPH = fit(sphCv); render(); });
+  ro.observe(mapCv); ro.observe(sphCv);
+}
+
 addEventListener('resize', resize);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => render());
 })();
