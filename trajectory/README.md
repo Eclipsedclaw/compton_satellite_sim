@@ -189,9 +189,32 @@ overwrite each other.
 
 ## `trajectory.html`
 
-An interactive browser version of the celestial plots. It is a single
-self-contained file: all calculations run in the browser, and it loads nothing
-from the internet.
+An interactive browser version of the celestial plots. All calculations run in
+the browser, and it loads nothing from the internet.
+
+The page is split into markup, one stylesheet and plain scripts (no build step,
+and it still works when opened directly from disk):
+
+| File | Content |
+|---|---|
+| `trajectory.html` | Page markup; loads the files below in order |
+| `css/trajectory.css` | All styles |
+| `js/version.js` | `VERSION` and the version history |
+| `js/config.js` | `DEFAULTS` and the saved user state `S` |
+| `js/orbit.js` | Constants, vector math, orbit propagation, pointing |
+| `js/draw-common.js` | Colours, canvas sizing, star / Sun / Galactic Center markers |
+| `js/map.js` | All-sky Mollweide map |
+| `js/sphere.js` | 3D celestial sphere |
+| `js/coverage.js` | Year-long visibility used by the table strips |
+| `js/ui.js` | Readout, sources table, settings, pointing, controls, PNG export |
+| `js/main.js` | Startup, resizable panels, resize handling |
+
+The scripts share one global scope, so their order in `trajectory.html`
+matters: `version.js` comes first and `main.js` must stay last.
+
+To release a new version, change `VERSION` in `js/version.js` and add a line to
+the history there. The page footer shows it automatically. Saved settings are
+stored per version, so a new version starts every user from `DEFAULTS`.
 
 ### Use
 
@@ -216,16 +239,15 @@ Open the file in a browser, or serve it from a web server (see below).
 Settings and added sources are stored in each user's browser (`localStorage`)
 and are kept between visits. **Restore defaults** resets them.
 
-To change the defaults for all users, edit the `DEFAULTS` block near the top of
-the `<script>` section.
+To change the defaults for all users, edit the `DEFAULTS` block in
+`js/config.js`.
 
 ### Serve with nginx
 
 ```bash
 sudo mkdir -p /var/www/trajectory
-sudo cp trajectory.html /var/www/trajectory/
-sudo chmod 755 /var/www/trajectory
-sudo chmod 644 /var/www/trajectory/trajectory.html
+sudo cp -r trajectory.html css js /var/www/trajectory/
+sudo chmod -R u=rwX,go=rX /var/www/trajectory
 ```
 
 `/etc/nginx/sites-available/trajectory`:
@@ -240,10 +262,15 @@ server {
     index trajectory.html;
 
     location / {
+        add_header Cache-Control "no-cache";
         try_files $uri $uri/ =404;
     }
 }
 ```
+
+`no-cache` makes browsers check with the server on each visit (a quick "not
+modified" reply when nothing changed), so users always get the latest CSS and
+JS after an update.
 
 Enable and check:
 
@@ -272,8 +299,8 @@ ssh -N -L 8081:localhost:8081 username@<server-address>
 Then open <http://localhost:8081/>. The page is available while the command is
 running.
 
-To update the page, copy the new file over the old one. No nginx restart is
-needed.
+To update the page, copy `trajectory.html`, `css/` and `js/` over the old
+ones. No nginx restart is needed.
 
 ---
 
