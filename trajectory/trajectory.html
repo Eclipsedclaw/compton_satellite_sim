@@ -42,10 +42,18 @@ header p{margin:0;color:var(--muted);max-width:75ch}
 .sphere-panel{padding:8px}
 #sphere{width:100%;aspect-ratio:1/1;display:block;cursor:grab;touch-action:none}
 #sphere:active{cursor:grabbing}
-.readout{padding:12px 14px;display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px}
-.readout dt{color:var(--muted)}
-.readout dd{margin:0;text-align:right}
-.readout .now{grid-column:1/-1;font-size:18px;font-weight:600;text-align:left;margin-bottom:4px}
+/* ---------- status block ---------- */
+.status-panel{margin-top:16px;padding:14px 16px}
+.status-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;margin-bottom:12px}
+.status-now{font-size:20px;font-weight:600}
+.status-sub{color:var(--muted);font-size:14px}
+.status-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 12px;margin:0}
+.stat{min-width:0;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.stat dt{font-size:12px;color:var(--muted)}
+.stat dd{margin:2px 0 0;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status-fov{margin-top:12px}
+.status-label{font-size:12px;color:var(--muted);margin-bottom:6px}
+.fov-list{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;height:62px;overflow-y:auto}
 .time{margin-top:16px;padding:14px 16px 12px}
 .time-row{display:grid;grid-template-columns:96px minmax(0,1fr) 120px;gap:12px;align-items:center}
 .time-row+.time-row{margin-top:10px}
@@ -88,7 +96,7 @@ details.settings summary{cursor:pointer;font-weight:600;font-size:16px}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);padding:2px 6px 4px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .sw{display:inline-block;width:16px;height:3px}
-@media (max-width:860px){.stage{grid-template-columns:1fr}.splitter{display:none}.side{display:grid;grid-template-columns:1fr 1fr}}
+@media (max-width:860px){.stage{grid-template-columns:1fr}.splitter{display:none}.side{display:block}.status-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.fov-list{height:92px}}
 @media (max-width:560px){.side{grid-template-columns:1fr}.time-row{grid-template-columns:1fr auto}.time-row>div,.time-row>input{grid-column:1/-1;grid-row:2}.months .minor{display:none}header h1{font-size:23px}}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
 
@@ -132,9 +140,17 @@ details.settings summary{cursor:pointer;font-weight:600;font-size:16px}
        tabindex="0" title="Drag to resize, double-click to reset"></div>
   <div class="side">
     <div class="panel sphere-panel"><canvas id="sphere" aria-label="Celestial sphere, drag to rotate"></canvas></div>
-    <div class="panel"><dl class="readout" id="readout"></dl></div>
   </div>
 </div>
+
+<section class="panel status-panel" aria-label="Current status">
+  <div class="status-head"><span class="status-now" id="rNow"></span><span class="status-sub" id="rBj"></span></div>
+  <dl class="status-grid" id="readout"></dl>
+  <div class="status-fov">
+    <div class="status-label">Sources in the field of view now</div>
+    <div class="fov-list" id="rFov"></div>
+  </div>
+</section>
 
 <div class="panel time">
   <div class="time-row">
@@ -284,7 +300,7 @@ const DEFAULTS = {
 };
 
 // --------- state ----------
-const VERSION = '1.2';
+const VERSION = '1.2.2';
 const KEY = 'compton-sky-planner-v' + VERSION;
 document.getElementById('appVersion').textContent = 'v' + VERSION;
 
@@ -646,18 +662,26 @@ function renderReadout(st){
   const sunAng = angDeg(st.sun, st.axis);
   const lon = wrap180(Math.atan2(st.zen[1], st.zen[0]) / D - gmst(jd(st.ms)));
   const lat = Math.asin(st.zen[2]) / D;
-  const inNow = st.src.filter(o => o.now).map(o => o.name).join(', ') || 'none';
   const elapsed = (st.ms - O.t0) / 864e5;
-  $('readout').innerHTML = `<dd class="now">${fmtUTC(d)} UTC</dd>
-    <dt>Beijing time</dt><dd>${pad(bj.getUTCHours())}:${pad(bj.getUTCMinutes())}</dd>
-    <dt>Since launch</dt><dd>${elapsed < 0 ? 'before launch' : elapsed.toFixed(1) + ' days'}</dd>
-    <dt>Satellite over</dt><dd>${Math.abs(lat).toFixed(1)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lon).toFixed(1)}° ${lon >= 0 ? 'E' : 'W'}</dd>
-    <dt>Pointing</dt><dd>${pointingLabel().replace(/</g, '&lt;')}</dd>
-    ${S.pointing === 'zenith' ? '' : `<dt>Axis behind Earth now</dt><dd>${st.axisBlocked ? 'yes' : 'no'}</dd>
-    <dt>Axis clear this orbit</dt><dd>${(st.clearFrac * 100).toFixed(0)}%</dd>`}
-    <dt>Earth in field of view</dt><dd>${st.earthInFov ? 'yes' : 'no'}</dd>
-    <dt>Sun from camera axis</dt><dd>${sunAng.toFixed(1)}°</dd>
-    <dt>In field of view</dt><dd>${inNow.replace(/</g, '&lt;')}</dd>`;
+  const z = S.pointing === 'zenith';
+  const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  const inNow = st.src.filter(o => o.now);
+  $('rNow').textContent = `${fmtUTC(d)} UTC`;
+  $('rBj').textContent = `Beijing time ${pad(bj.getUTCHours())}:${pad(bj.getUTCMinutes())}`;
+  const items = [
+    ['Since launch', elapsed < 0 ? 'before launch' : elapsed.toFixed(1) + ' days'],
+    ['Satellite over', `${Math.abs(lat).toFixed(1)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lon).toFixed(1)}° ${lon >= 0 ? 'E' : 'W'}`],
+    ['Pointing', pointingLabel()],
+    ['Sun from camera axis', sunAng.toFixed(1) + '°'],
+    ['Earth in field of view', st.earthInFov ? 'yes' : 'no'],
+    ['Axis behind Earth now', z ? '— (zenith)' : (st.axisBlocked ? 'yes' : 'no')],
+    ['Axis clear this orbit', z ? '— (zenith)' : (st.clearFrac * 100).toFixed(0) + '%'],
+    ['Sources in view', String(inNow.length)],
+  ];
+  $('readout').innerHTML = items.map(([k, v]) => `<div class="stat"><dt>${esc(k)}</dt><dd title="${esc(v)}">${esc(v)}</dd></div>`).join('');
+  $('rFov').innerHTML = inNow.length
+    ? inNow.map(o => `<span class="chip now">${esc(o.name)}</span>`).join('')
+    : '<span class="status-sub">No listed source is in the field of view right now.</span>';
 }
 
 function renderTable(st){
