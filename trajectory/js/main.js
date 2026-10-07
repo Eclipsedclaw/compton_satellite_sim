@@ -1,12 +1,16 @@
 // Startup, resizable panels and resize handling (must load last)
 
 // ---------- start ----------
-function resize(){ MAP = fit(mapCv); SPH = fit(sphCv); render(); }
-matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readColors(); render(); });
-new MutationObserver(() => { readColors(); render(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-readColors(); fillSettings(); fillPointing();
-if (!setup()) { S = JSON.parse(JSON.stringify(DEFAULTS)); fillSettings(); setup(); }
-MAP = fit(mapCv); SPH = fit(sphCv);
+// canvases on the page that is not shown have no size; they are fitted again when shown
+function fitAll(){ MAP = fit(mapCv); SPH = fit(sphCv); EAR = fit(earthCv); }
+function resize(){ fitAll(); render(); }
+// the year strips keep their colours in pixels, so they are repainted with the theme
+const themeChanged = () => { readColors(); paintStrips(); render(); };
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', themeChanged);
+new MutationObserver(themeChanged).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+readColors(); fillSettings(); fillEarth(); buildSourceList(); fillPointing();
+if (!setup()) { S = JSON.parse(JSON.stringify(DEFAULTS)); fillSettings(); fillEarth(); buildSourceList(); fillPointing(); setup(); }
+fitAll();
 goLaunch();
 
 // ---------- resizable panels ----------
@@ -36,8 +40,8 @@ splitEl.addEventListener('keydown', e => {
 });
 // redraw the canvases sharply whenever their size changes
 if (window.ResizeObserver) {
-  const ro = new ResizeObserver(() => { MAP = fit(mapCv); SPH = fit(sphCv); render(); });
-  ro.observe(mapCv); ro.observe(sphCv);
+  const ro = new ResizeObserver(resize);
+  ro.observe(mapCv); ro.observe(sphCv); ro.observe(earthCv);
 }
 
 addEventListener('resize', resize);

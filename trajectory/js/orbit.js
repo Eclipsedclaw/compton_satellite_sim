@@ -75,20 +75,23 @@ function smallCircle(ax, rDeg, n = 180){
 }
 
 // ---------- pointing ----------
+// S.pointing is the mode tab: 'zenith' or 'target'.
+// S.target is { name, ra, dec } of a fixed target, or 'sun' to track the Sun.
 const rho = () => Math.asin(RE / (RE + S.alt));            // Earth's angular radius seen from orbit
 function axisFor(ms, st){
-  if (S.pointing === 'sun') return sunVec(jd(ms));
-  if (S.pointing === 'target') return radec(S.target[1], S.target[2]);
-  return st.zen;
+  if (S.pointing === 'zenith') return st.zen;
+  return S.target === 'sun' ? sunVec(jd(ms)) : radec(S.target.ra, S.target.dec);
 }
-function pointingLabel(){
-  if (S.pointing === 'sun') return 'Sun';
-  if (S.pointing === 'target') return `${S.target[0]} (${S.target[1].toFixed(2)}°, ${S.target[2] >= 0 ? '+' : ''}${S.target[2].toFixed(2)}°)`;
-  return 'Zenith';
+function fmtRaDec(v){
+  const ra = mod(Math.atan2(v[1], v[0]) / D, 360), dec = Math.asin(Math.max(-1, Math.min(1, v[2]))) / D;
+  return `${ra.toFixed(2)}°, ${dec >= 0 ? '+' : ''}${dec.toFixed(2)}°`;
+}
+function pointingLabel(st){
+  if (S.pointing === 'zenith') return 'Zenith';
+  return `${S.target === 'sun' ? 'Sun' : S.target.name} (${fmtRaDec(st.axis)})`;
 }
 function pointingPhrase(){
-  if (S.pointing === 'sun') return 'camera tracking the Sun';
-  if (S.pointing === 'target') return `camera fixed on ${S.target[0]}`;
-  return 'zenith-pointing camera';
+  if (S.pointing === 'zenith') return 'zenith-pointing camera';
+  return S.target === 'sun' ? 'camera tracking the Sun' : `camera fixed on ${S.target.name}`;
 }
 const angDeg = (a, b) => Math.acos(Math.max(-1, Math.min(1, dot(a, b)))) / D;

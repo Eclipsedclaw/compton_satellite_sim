@@ -1,4 +1,5 @@
-// Readout, sources table, settings, pointing, controls and PNG export
+// Readout, settings, tabs and target, controls and PNG export
+// (the sources table is in sources.js, the ground-track page in groundtrack.js)
 
 // ---------- UI ----------
 const $ = id => document.getElementById(id);
@@ -13,9 +14,9 @@ function state(){
   st.axis = axisFor(ms, st);
   st.nadir = st.zen.map(v => -v);
   const cf = Math.cos(S.fov * D), sf = Math.sin(S.fov * D), cr = Math.cos(rho());
-  st.src = S.sources.map(([name, ra, dec]) => {
-    const v = radec(ra, dec), inFov = dot(v, st.axis) >= cf, occ = dot(v, st.nadir) >= cr;
-    return { name, ra, dec, v, inFov, occ, now: inFov && !occ,
+  st.src = SOURCES.map(({ name, v }) => {
+    const inFov = dot(v, st.axis) >= cf, occ = dot(v, st.nadir) >= cr;
+    return { name, v, inFov, occ, now: inFov && !occ,
              band: S.pointing === 'zenith' ? Math.abs(dot(v, st.h)) <= sf : inFov,
              off: angDeg(v, st.axis) };
   });
@@ -32,80 +33,50 @@ function state(){
 
 function renderReadout(st){
   const d = new Date(st.ms), bj = new Date(st.ms + 8 * 3.6e6);
-  const sunAng = angDeg(st.sun, st.axis);
+  const sunAng = angDeg(st.sun, st.axis).toFixed(1) + '°';
   const lon = wrap180(Math.atan2(st.zen[1], st.zen[0]) / D - gmst(jd(st.ms)));
   const lat = Math.asin(st.zen[2]) / D;
   const elapsed = (st.ms - O.t0) / 864e5;
-  const z = S.pointing === 'zenith';
   const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-  const inNow = st.src.filter(o => o.now);
+  const inNow = st.src.filter(o => o.now), yn = b => b ? 'yes' : 'no';
   $('rNow').textContent = `${fmtUTC(d)} UTC`;
   $('rBj').textContent = `Beijing time ${pad(bj.getUTCHours())}:${pad(bj.getUTCMinutes())}`;
-  const items = [
+  const head = [
     ['Since launch', elapsed < 0 ? 'before launch' : elapsed.toFixed(1) + ' days'],
     ['Satellite over', `${Math.abs(lat).toFixed(1)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lon).toFixed(1)}° ${lon >= 0 ? 'E' : 'W'}`],
-    ['Pointing', pointingLabel()],
-    ['Sun from camera axis', sunAng.toFixed(1) + '°'],
-    ['Earth in field of view', st.earthInFov ? 'yes' : 'no'],
-    ['Axis behind Earth now', z ? '— (zenith)' : (st.axisBlocked ? 'yes' : 'no')],
-    ['Axis clear this orbit', z ? '— (zenith)' : (st.clearFrac * 100).toFixed(0) + '%'],
+  ];
+  let items;
+  if (S.page === 'earth') {
+    // the track starts at the selected time, so its first point is the satellite now
+    const p = st.track[0], until = key => { const q = st.track.find(r => r[key] !== p[key]); return q ? Math.round(q.t / 60) : null; };
+    const sh = until('shadow'), sa = until('saa'), lmst = mod(st.ms / 3.6e6 + lon / 15, 24);
+    items = [...head,
+      ['Orbit since launch', elapsed < 0 ? '—' : String(Math.floor(elapsed * 86400 / O.P) + 1)],
+      ['Local solar time below', `${pad(Math.floor(lmst))}:${pad(Math.floor(lmst % 1 * 60))}`],
+      ['Earth shadow', p.shadow ? (sh == null ? 'in shadow' : `in shadow, sunlit in ${sh} min`) : (sh == null ? 'sunlit' : `sunlit, shadow in ${sh} min`)],
+      ['SAA (approx.)', p.saa ? (sa == null ? 'inside' : `inside, leaves in ${sa} min`) : (sa == null ? 'outside' : `outside, enters in ${sa} min`)],
+    ];
+  } else items = S.pointing === 'zenith' ? [...head,
+    ['Camera axis (RA, Dec)', fmtRaDec(st.axis)],
+    ['Sun from camera axis', sunAng],
+    ["Sources in today's band", String(st.src.filter(o => o.band).length)],
+    ['Sources in view', String(inNow.length)],
+  ] : [...head,
+    ['Target', pointingLabel(st)],
+    ['Sun from camera axis', sunAng],
+    ['Earth in field of view', yn(st.earthInFov)],
+    ['Target behind Earth now', yn(st.axisBlocked)],
+    ['Target clear this orbit', (st.clearFrac * 100).toFixed(0) + '%'],
     ['Sources in view', String(inNow.length)],
   ];
+  // two rows on wide screens in both modes, so switching tabs does not move the page
+  $('readout').style.setProperty('--cols', Math.ceil(items.length / 2));
   $('readout').innerHTML = items.map(([k, v]) => `<div class="stat"><dt>${esc(k)}</dt><dd title="${esc(v)}">${esc(v)}</dd></div>`).join('');
   $('rFov').innerHTML = inNow.length
     ? inNow.map(o => `<span class="chip now">${esc(o.name)}</span>`).join('')
     : '<span class="status-sub">No listed source is in the field of view right now.</span>';
 }
 
-function renderTable(st){
-  const tb = $('srcBody');
-  if (tb.children.length !== S.sources.length) buildTable();
-  st.src.forEach((o, k) => {
-    const row = tb.children[k];
-    row.querySelector('.state').innerHTML = o.now ? '<span class="chip now">in view now</span>'
-      : (o.inFov && o.occ) ? '<span class="chip">behind Earth</span>'
-      : (S.pointing === 'zenith' && o.band) ? '<span class="chip band">in band today</span>'
-      : `<span class="chip">${o.off.toFixed(0)}° away</span>`;
-    drawStrip(row.querySelector('canvas'), yearSeen[k], yearFrac[k]);
-  });
-}
-function fmtFlux(v){
-  if (v == null || !isFinite(v)) return '—';
-  return (v !== 0 && (Math.abs(v) < 0.01 || Math.abs(v) >= 1e4)) ? v.toExponential(2) : v.toPrecision(3);
-}
-function buildTable(){
-  const tb = $('srcBody'); tb.innerHTML = '';
-  S.sources.forEach(([name, ra, dec, fBat, fLat], k) => {
-    const tr = document.createElement('tr');
-    const n = yearSeen[k] ? yearSeen[k].reduce((a, b) => a + b, 0) : 0;
-    const avg = yearFrac[k] ? yearFrac[k].reduce((a, b) => a + b, 0) / 365 * 100 : 0;
-    tr.innerHTML = `<td></td><td>${ra.toFixed(2)}°, ${dec >= 0 ? '+' : ''}${dec.toFixed(2)}°</td><td class="num">${fmtFlux(fBat)}</td><td class="num">${fmtFlux(fLat)}</td><td class="state"></td>
-      <td><canvas class="strip" aria-label="Days in band over the year"></canvas></td><td class="num">${n}</td><td class="num">${avg.toFixed(1)}%</td>
-      <td><button class="rm" type="button" aria-label="Remove source">✕</button></td>`;
-    tr.children[0].textContent = name;
-    tr.querySelector('.rm').addEventListener('click', () => { S.sources.splice(k, 1); persist(); computeYear(); buildTable(); fillPointing(); render(); });
-    const cv = tr.querySelector('canvas');
-    cv.addEventListener('click', e => { const r = cv.getBoundingClientRect(); dayEl.value = Math.min(364, Math.floor((e.clientX - r.left) / r.width * 365)); render(); });
-    tb.appendChild(tr);
-  });
-}
-function drawStrip(cv, seen, frac){
-  const F = fit(cv), x = F.x, cw = F.w / 365;
-  x.clearRect(0, 0, F.w, F.h);
-  for (let d = 0; d < 365; d++) {
-    x.fillStyle = C.off; x.fillRect(d * cw, 3, Math.max(cw, 1) + 0.3, F.h - 6);
-    if (seen[d]) {
-      x.globalAlpha = fracMax > 0 ? 0.35 + 0.65 * Math.min(1, frac[d] / fracMax) : 0.35;
-      x.fillStyle = C.axis; x.fillRect(d * cw, 3, Math.max(cw, 1) + 0.3, F.h - 6);
-      x.globalAlpha = 1;
-    }
-  }
-  for (let m = 0; m < 12; m++) {
-    const t = new Date(O.day0); t.setUTCMonth(t.getUTCMonth() + m, 1); const d = Math.round((t - O.day0) / 864e5);
-    if (d > 0 && d < 365) { x.fillStyle = C.panel; x.fillRect(d * cw - 0.5, 3, 1, F.h - 6); }
-  }
-  const cd = +dayEl.value; x.fillStyle = C.fov; x.fillRect(Math.min(cd, 364) * cw - 1, 0, 3, F.h);
-}
 function buildMonths(){
   const box = $('months'); box.innerHTML = '';
   for (let m = 0; m < 13; m++) {
@@ -125,7 +96,8 @@ function render(){
     const st = state(), d = new Date(st.ms);
     $('dayOut').textContent = `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`;
     const hh = +hourEl.value; $('hourOut').textContent = `${pad(Math.floor(hh) % 24)}:${pad(Math.floor(hh % 1 * 60))} UTC`;
-    drawMap(st); drawSphere(st); renderReadout(st); renderTable(st);
+    if (S.page === 'earth') drawGroundTrack(st); else { drawMap(st); drawSphere(st); renderTable(st); }
+    renderReadout(st);
   });
 }
 
@@ -161,51 +133,72 @@ $('apply').addEventListener('click', () => {
   if (!setup()) { Object.assign(S, old); setup(); return; }
   persist(); goLaunch();
 });
-$('reset').addEventListener('click', () => { S = JSON.parse(JSON.stringify(DEFAULTS)); persist(); fillSettings(); fillPointing(); setup(); goLaunch(); });
+$('reset').addEventListener('click', () => { S = JSON.parse(JSON.stringify(DEFAULTS)); persist(); fillSettings(); fillEarth(); buildSourceList(); fillPointing(); setup(); goLaunch(); });
+
+// ---------- tabs at the top of the page: the two pointing modes and the ground track ----------
+const modeTabs = [...document.querySelectorAll('.mode-tab')];
+const currentTab = () => S.page === 'earth' ? 'earth' : S.pointing;
+function showMode(){
+  const tab = currentTab();
+  modeTabs.forEach(t => {
+    const on = t.dataset.mode === tab;
+    t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1;
+    $(t.getAttribute('aria-controls')).hidden = !on;
+  });
+  document.querySelector('.wrap').dataset.page = S.page;     // CSS shows the sky or the ground-track page
+}
+function pointingChanged(){ persist(); computeYear(); tableCoverage(); summary(); render(); }
+function setMode(mode){
+  if (mode === currentTab()) return;
+  const repoint = mode !== 'earth' && mode !== S.pointing;   // the ground track keeps the pointing mode for later
+  S.page = mode === 'earth' ? 'earth' : 'sky';
+  if (repoint) S.pointing = mode;
+  showMode();
+  if (repoint) pointingChanged(); else { persist(); render(); }
+}
+modeTabs.forEach((t, k) => {
+  t.addEventListener('click', () => setMode(t.dataset.mode));
+  t.addEventListener('keydown', e => {
+    const to = { ArrowLeft: k - 1, ArrowRight: k + 1, Home: 0, End: modeTabs.length - 1 }[e.key];
+    if (to === undefined) return;
+    e.preventDefault();
+    const tab = modeTabs[mod(to, modeTabs.length)]; tab.focus(); setMode(tab.dataset.mode);
+  });
+});
 
 function fillPointing(){
-  const sel = $('pTarget'); sel.innerHTML = '';
-  S.sources.forEach(([n], k) => { const o = document.createElement('option'); o.value = String(k); o.textContent = n; sel.appendChild(o); });
-  const c = document.createElement('option'); c.value = 'custom'; c.textContent = 'Custom RA/Dec…'; sel.appendChild(c);
-  const idx = S.sources.findIndex(t => t[0] === S.target[0] && Math.abs(t[1] - S.target[1]) < 1e-6 && Math.abs(t[2] - S.target[2]) < 1e-6);
-  sel.value = idx >= 0 ? String(idx) : 'custom';
-  if (idx < 0) { $('pRa').value = S.target[1]; $('pDec').value = S.target[2]; }
-  $('pMode').value = S.pointing;
-  updatePointingUI();
+  const sel = $('pTarget'), add = (box, value, text) => { const o = document.createElement('option'); o.value = value; o.textContent = text; box.appendChild(o); };
+  sel.innerHTML = '';
+  add(sel, 'sun', 'Sun');
+  const grp = document.createElement('optgroup'); grp.label = 'Sources'; sel.appendChild(grp);
+  SOURCES.forEach((s, k) => add(grp, String(k), s.name));
+  add(sel, 'custom', 'Custom RA/Dec…');
+  const t = S.target, sun = t === 'sun';
+  const idx = sun ? -1 : SOURCES.findIndex(s => s.name === t.name && Math.abs(s.ra - t.ra) < 1e-6 && Math.abs(s.dec - t.dec) < 1e-6);
+  sel.value = sun ? 'sun' : idx >= 0 ? String(idx) : 'custom';
+  if (sel.value === 'custom') { $('pRa').value = t.ra; $('pDec').value = t.dec; }
+  showMode(); updatePointingUI();
 }
 function updatePointingUI(){
-  const t = $('pMode').value === 'target', c = t && $('pTarget').value === 'custom';
-  $('pTarget').hidden = !t;
+  const c = $('pTarget').value === 'custom';
   ['pRa', 'pDec', 'pApply'].forEach(id => $(id).hidden = !c);
 }
-function applyPointing(){
-  const mode = $('pMode').value;
-  if (mode === 'target') {
-    const v = $('pTarget').value;
-    if (v === 'custom') {
-      const ra = parseFloat($('pRa').value), dec = parseFloat($('pDec').value);
-      if (!isFinite(ra) || !isFinite(dec)) { $('status').textContent = 'Enter the target RA and Dec in degrees, then press Point here.'; return; }
-      S.target = ['Custom target', mod(ra, 360), Math.max(-90, Math.min(90, dec))];
-    } else {
-      S.target = S.sources[+v].slice();
-    }
+function applyTarget(){
+  const v = $('pTarget').value;
+  if (v === 'custom') {
+    const ra = parseFloat($('pRa').value), dec = parseFloat($('pDec').value);
+    if (!isFinite(ra) || !isFinite(dec)) return;
+    S.target = { name: 'Custom target', ra: mod(ra, 360), dec: Math.max(-90, Math.min(90, dec)) };
+  } else if (v === 'sun') {
+    S.target = 'sun';
+  } else {
+    const { name, ra, dec } = SOURCES[+v]; S.target = { name, ra, dec };
   }
-  S.pointing = mode;
-  $('status').textContent = '';
-  persist(); computeYear(); buildTable(); summary(); render();
+  pointingChanged();
 }
-$('pMode').addEventListener('change', () => { updatePointingUI(); if ($('pMode').value !== 'target' || $('pTarget').value !== 'custom') applyPointing(); });
-$('pTarget').addEventListener('change', () => { updatePointingUI(); if ($('pTarget').value !== 'custom') applyPointing(); });
-$('pApply').addEventListener('click', applyPointing);
-$('addForm').addEventListener('submit', e => {
-  e.preventDefault();
-  const ra = parseFloat($('aRa').value), dec = parseFloat($('aDec').value), name = $('aName').value.trim();
-  if (!name || !isFinite(ra) || !isFinite(dec)) return;
-  const fb = parseFloat($('aFbat').value), fl = parseFloat($('aFlat').value);
-  S.sources.push([name, mod(ra, 360), Math.max(-90, Math.min(90, dec)),
-                  isFinite(fb) ? fb : null, isFinite(fl) ? fl : null]); persist();
-  e.target.reset(); computeYear(); buildTable(); fillPointing(); render();
-});
+$('pTarget').addEventListener('change', () => { updatePointingUI(); if ($('pTarget').value !== 'custom') applyTarget(); });
+// a form, so the browser checks the RA/Dec fields and Enter applies them
+$('pForm').addEventListener('submit', e => { e.preventDefault(); applyTarget(); });
 
 dayEl.addEventListener('input', render); hourEl.addEventListener('input', render);
 $('prev').addEventListener('click', () => { dayEl.value = Math.max(0, +dayEl.value - 1); render(); });
@@ -218,7 +211,7 @@ $('play').addEventListener('click', () => {
   playing = setInterval(() => { let d = +dayEl.value + 1; if (d > 365) d = 0; dayEl.value = d; render(); }, 180);
 });
 document.addEventListener('keydown', e => {
-    if (e.target.matches('input, select, textarea, .splitter')) return;
+  if (e.target.matches('input, select, textarea, .splitter, [role="tab"]')) return;
   if (e.key === 'ArrowRight') { dayEl.value = Math.min(365, +dayEl.value + 1); render(); }
   if (e.key === 'ArrowLeft') { dayEl.value = Math.max(0, +dayEl.value - 1); render(); }
   if (e.key === 'ArrowUp') { hourEl.value = mod(+hourEl.value + 0.5, 24); render(); }
@@ -243,14 +236,17 @@ function saveBlob(blob, name){
   $('status').textContent = `Saved ${name}`;
 }
 $('save').addEventListener('click', async () => {
+  if (S.page === 'earth') return saveGroundTrack();
   const st = state(), d = new Date(st.ms), scale = 2;
   const W = (MAP.w + SPH.w + 30) * scale, H = (Math.max(MAP.h, SPH.h) + 70) * scale;
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d');
   x.fillStyle = C.panel; x.fillRect(0, 0, W, H);
   x.fillStyle = C.ink; x.font = `600 ${16*scale}px ${FONT}`;
-  x.fillText(`${S.site} launch, ${fmtUTC(d)} UTC, pointing: ${pointingLabel()} (FoV ±${S.fov}°)`, 14*scale, 26*scale);
+  x.fillText(`${S.site} launch, ${fmtUTC(d)} UTC, pointing: ${pointingLabel(st)} (FoV ±${S.fov}°)`, 14*scale, 26*scale);
   x.fillStyle = C.muted; x.font = `${12*scale}px ${FONT}`;
-  x.fillText(`In field of view: ${st.src.filter(o => o.now).map(o => o.name).join(', ') || 'none'}   In today's band: ${st.src.filter(o => o.band).map(o => o.name).join(', ') || 'none'}`, 14*scale, 46*scale);
+  const names = f => st.src.filter(f).map(o => o.name).join(', ') || 'none';
+  const more = S.pointing === 'zenith' ? `In today's band: ${names(o => o.band)}` : `Target clear of Earth for ${(st.clearFrac * 100).toFixed(0)}% of this orbit`;
+  x.fillText(`In field of view: ${names(o => o.now)}   ${more}`, 14*scale, 46*scale);
   x.drawImage(mapCv, 0, 0, mapCv.width, mapCv.height, 10*scale, 60*scale, MAP.w*scale, MAP.h*scale);
   x.drawImage(sphCv, 0, 0, sphCv.width, sphCv.height, (MAP.w + 20)*scale, 60*scale, SPH.w*scale, SPH.h*scale);
   const name = `sky_track_${S.site.replace(/[^A-Za-z0-9_-]/g, '')}_${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}_${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}UTC.png`;

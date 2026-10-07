@@ -10,11 +10,51 @@
 <body>
 <div class="wrap">
 <header>
-  <h1>Compton camera sky planner</h1>
-  <p id="summary"></p>
+  <img class="logo" src="compsat.svg" alt="" width="72" height="72">
+  <div class="head-text">
+    <h1>Compton camera sky planner</h1>
+    <p id="summary"></p>
+  </div>
 </header>
 
-<div class="stage">
+<div class="modes" role="tablist" aria-label="Planner view">
+  <button type="button" class="mode-tab" role="tab" id="tabZenith" data-mode="zenith" aria-controls="modeZenith" aria-selected="true">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21a12 12 0 0 1 18 0"/><path d="M12 14V3M7.5 7.5 12 3l4.5 4.5"/></svg>
+    <span><span class="mode-name">Zenith</span><span class="mode-hint">Camera looks away from Earth</span></span>
+  </button>
+  <button type="button" class="mode-tab" role="tab" id="tabTarget" data-mode="target" aria-controls="modeTarget" aria-selected="false" tabindex="-1">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+    <span><span class="mode-name">Point at a source</span><span class="mode-hint">Sun, Galactic Center or any source</span></span>
+  </button>
+  <button type="button" class="mode-tab" role="tab" id="tabEarth" data-mode="earth" aria-controls="modeEarth" aria-selected="false" tabindex="-1">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-3.2 3.4-3.2 14.6 0 18M12 3c3.2 3.4 3.2 14.6 0 18"/></svg>
+    <span><span class="mode-name">Ground track</span><span class="mode-hint">Where the satellite is over Earth</span></span>
+  </button>
+</div>
+<div class="mode-panel" role="tabpanel" id="modeZenith" aria-labelledby="tabZenith">
+  <p>The camera axis sweeps the blue circle once per orbit. A source between the dashed lines is in the field of view at some time that day.</p>
+</div>
+<div class="mode-panel" role="tabpanel" id="modeTarget" aria-labelledby="tabTarget" hidden>
+  <form class="point-controls" id="pForm">
+    <label for="pTarget">Target</label>
+    <select id="pTarget"></select>
+    <input id="pRa" type="number" step="any" min="0" max="360" placeholder="RA [deg]" aria-label="Target RA in degrees" required hidden>
+    <input id="pDec" type="number" step="any" min="-90" max="90" placeholder="Dec [deg]" aria-label="Target Dec in degrees" required hidden>
+    <button type="submit" id="pApply" hidden>Point here</button>
+  </form>
+  <p>The camera stays on the target. Earth can block it for part of each orbit; the grey area on the map is the sky hidden behind Earth now.</p>
+</div>
+<div class="mode-panel" role="tabpanel" id="modeEarth" aria-labelledby="tabEarth" hidden>
+  <div class="point-controls">
+    <label for="eOrbits">Orbits</label>
+    <input id="eOrbits" class="short" type="number" min="1" max="16" step="1">
+    <label for="eTick">Tick every</label>
+    <select id="eTick"><option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option><option value="30">30 min</option></select>
+  </div>
+  <p>The track over the next orbits from the selected time: solid in sunlight, dashed in Earth's shadow. <b>Go to launch</b> shows the first orbits after launch.</p>
+</div>
+
+<div class="stage sky-only">
   <div class="panel map-panel">
     <canvas id="map" aria-label="All-sky Mollweide map with the camera axis track, field of view, Sun and sources"></canvas>
     <div class="legend" aria-hidden="true">
@@ -36,10 +76,16 @@
   </div>
 </div>
 
+<div class="panel earth-panel earth-only">
+  <canvas id="earth" aria-label="World map with the satellite's ground track, Earth shadow, SAA and launch site"></canvas>
+  <div class="legend" id="earthLegend" aria-hidden="true"></div>
+  <div class="hoverline" id="earthHover"></div>
+</div>
+
 <section class="panel status-panel" aria-label="Current status">
   <div class="status-head"><span class="status-now" id="rNow"></span><span class="status-sub" id="rBj"></span></div>
   <dl class="status-grid" id="readout"></dl>
-  <div class="status-fov">
+  <div class="status-fov sky-only">
     <div class="status-label">Sources in the field of view now</div>
     <div class="fov-list" id="rFov"></div>
   </div>
@@ -55,20 +101,6 @@
     <label for="hour">Time (UTC)</label>
     <input type="range" id="hour" min="0" max="24" step="0.01" value="0">
     <output id="hourOut" for="hour"></output>
-  </div>
-  <div class="point-row">
-    <label for="pMode">Pointing</label>
-    <div class="point-controls">
-      <select id="pMode">
-        <option value="zenith">Zenith (away from Earth)</option>
-        <option value="sun">Track the Sun</option>
-        <option value="target">Fixed sky target</option>
-      </select>
-      <select id="pTarget" aria-label="Target" hidden></select>
-      <input id="pRa" type="number" step="any" min="0" max="360" placeholder="RA [deg]" aria-label="Target RA in degrees" hidden>
-      <input id="pDec" type="number" step="any" min="-90" max="90" placeholder="Dec [deg]" aria-label="Target Dec in degrees" hidden>
-      <button type="button" id="pApply" hidden>Point here</button>
-    </div>
   </div>
   <div class="buttons">
     <button id="prev" type="button">−1 day</button>
@@ -112,15 +144,30 @@
   </div>
   <div class="err" id="err" role="alert"></div>
   <div class="buttons"><button type="button" id="apply" class="primary">Apply settings</button><button type="button" id="reset">Restore defaults</button></div>
-  <p class="note">Model: circular orbit with J2 precession, launch at the moment the site enters the orbital plane on a southbound pass. The camera axis follows the pointing mode chosen above; Earth blocks a disk of radius asin(R<sub>E</sub>/(R<sub>E</sub>+h)) around the nadir. The sky circle for any date is reliable; the satellite's position along it far from launch is illustrative, since drag shifts the timing. The SAA is not included.</p>
+  <p class="note">Model: circular orbit with J2 precession, launch at the moment the site enters the orbital plane on a southbound pass. The camera axis follows the mode chosen at the top of the page; Earth blocks a disk of radius asin(R<sub>E</sub>/(R<sub>E</sub>+h)) around the nadir. The sky circle for any date is reliable; the satellite's position along it far from launch is illustrative, since drag shifts the timing. On the ground-track page, Earth's shadow is a cylinder (no penumbra) and the SAA is an approximate ellipse, not a flux model.</p>
 </details>
 
-
+<section class="sky-only" aria-label="Sources">
 <h2>Sources</h2>
-<p class="lede">Each strip covers one year from launch. A filled day means the source is in the field of view, and not behind Earth, at some time that day; darker means more time in view. Click a strip to jump to that day. Flux is in units of 10<sup>−11</sup> erg cm<sup>−2</sup> s<sup>−1</sup>.</p>
+<p class="lede">Each strip covers one year from launch. A filled day means the source is in the field of view, and not behind Earth, at some time that day; darker means more time in view. Click a strip to jump to that day, or a column heading to sort. Flux is in units of 10<sup>−11</sup> erg cm<sup>−2</sup> s<sup>−1</sup>.</p>
+<div class="src-tools">
+  <input type="search" id="srcFilter" placeholder="Filter by name" aria-label="Filter sources by name" autocomplete="off">
+  <span class="src-count" id="srcCount" role="status"></span>
+  <button type="button" id="srcRestore" hidden></button>
+</div>
 <div class="panel table-wrap">
-  <table>
-    <thead><tr><th>Source</th><th>RA, Dec</th><th class="num" title="Swift-BAT 14–195 keV, 10⁻¹¹ erg cm⁻² s⁻¹">F<sub>BAT</sub></th><th class="num" title="Fermi-LAT 4FGL-DR2, 10⁻¹¹ erg cm⁻² s⁻¹">F<sub>LAT</sub></th><th>Now</th><th style="width:40%">Days in view over the year</th><th class="num">Days</th><th class="num">Time in view</th><th></th></tr></thead>
+  <table id="srcTable">
+    <thead><tr>
+      <th><button type="button" class="sort" data-key="name">Source</button></th>
+      <th><button type="button" class="sort" data-key="ra">RA, Dec</button></th>
+      <th class="num" title="Swift-BAT 14–195 keV, 10⁻¹¹ erg cm⁻² s⁻¹"><button type="button" class="sort" data-key="fBat">F<sub>BAT</sub></button></th>
+      <th class="num" title="Fermi-LAT 4FGL-DR2, 10⁻¹¹ erg cm⁻² s⁻¹"><button type="button" class="sort" data-key="fLat">F<sub>LAT</sub></button></th>
+      <th>Now</th>
+      <th style="width:40%">Days in view over the year</th>
+      <th class="num"><button type="button" class="sort" data-key="days">Days</button></th>
+      <th class="num"><button type="button" class="sort" data-key="time">Time in view</button></th>
+      <th></th>
+    </tr></thead>
     <tbody id="srcBody"></tbody>
   </table>
 </div>
@@ -132,7 +179,7 @@
   <label class="field">F<sub>LAT</sub> (optional)<input id="aFlat" type="number" step="any" min="0"></label>
   <button type="submit">Add source</button>
 </form>
-
+</section>
 
 <footer class="site-footer">
   <p class="footer-contact">
@@ -160,12 +207,16 @@
 
 <script src="js/version.js"></script>
 <script src="js/config.js"></script>
+<script src="data/sources.js"></script>
+<script src="data/world.js"></script>
 <script src="js/orbit.js"></script>
 <script src="js/draw-common.js"></script>
 <script src="js/map.js"></script>
 <script src="js/sphere.js"></script>
 <script src="js/coverage.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/sources.js"></script>
+<script src="js/groundtrack.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

@@ -4,7 +4,8 @@
 let C = {};
 function readColors(){
   const cs = getComputedStyle(document.documentElement);
-  ['paper','panel','ink','muted','line','grid','axis','axis-soft','fov','fov-soft','sun','off','gc'].forEach(k => C[k] = cs.getPropertyValue('--' + k).trim());
+  ['paper','panel','ink','muted','line','grid','axis','axis-soft','fov','fov-soft','sun','off','gc',
+   'ocean','land','coast','borders','saa','saa-soft','orbit1','orbit2','orbit3','orbit4','orbit5'].forEach(k => C[k] = cs.getPropertyValue('--' + k).trim());
 }
 function fit(cv){
   const r = cv.getBoundingClientRect(), d = devicePixelRatio || 1;

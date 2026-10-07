@@ -6,7 +6,7 @@
 let yearSeen = [], yearFrac = [], fracMax = 0;
 function computeYear(){
   const sinF = Math.sin(S.fov * D), cf = Math.cos(S.fov * D), cr = Math.cos(rho()), K = 48;
-  const vs = S.sources.map(([, ra, dec]) => radec(ra, dec));
+  const vs = SOURCES.map(s => s.v);
   yearSeen = vs.map(() => new Uint8Array(365));
   yearFrac = vs.map(() => new Float32Array(365));
   for (let d = 0; d < 365; d++) {
