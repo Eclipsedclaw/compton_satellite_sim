@@ -2,17 +2,16 @@
 """
 Write data/world.js, the world map of the sky planner's ground-track page.
 
-It converts the Natural Earth 1:110m land polygons and country borders, the same
-files cartopy uses for compton_satellite_earth_trajectory.py, into compact JS
-arrays the page loads like any other script (so it also works from disk).
+It converts the Natural Earth 1:110m land polygons and country borders into
+compact JS arrays the page loads like any other script (so it also works from disk).
 
 Run:
-    python tools/make_world_js.py                 # Natural Earth files from cartopy's data directory
     python tools/make_world_js.py /path/to/natural_earth
+    python tools/make_world_js.py                 # cartopy's copy of the files, if cartopy is installed
 
-Needs pyshp, which is installed with cartopy. If cartopy has never drawn a map on this
-computer, run compton_satellite_earth_trajectory.py once first, so it downloads
-the files, or download them from https://www.naturalearthdata.com.
+The folder must hold physical/ne_110m_land.* and
+cultural/ne_110m_admin_0_boundary_lines_land.*, from https://www.naturalearthdata.com.
+Needs pyshp (pip install pyshp).
 """
 
 import sys

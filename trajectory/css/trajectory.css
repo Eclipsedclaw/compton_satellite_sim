@@ -2,7 +2,7 @@
   --paper:#f3f5f8; --panel:#ffffff; --ink:#16223a; --muted:#5b6780; --line:#d5dbe5; --grid:#e3e7ee;
   --axis:#2f5bd3; --axis-soft:rgba(47,91,211,.14); --fov:#c76a12; --fov-soft:rgba(199,106,18,.16);
   --sun:#f2b705; --off:#c9cfda; --focus:#2f5bd3; --gc:#7b3fe4;
-  /* ground-track map; orbit colours as in compton_satellite_earth_trajectory.py */
+  /* ground-track map and orbit colours */
   --ocean:#eaf3fb; --land:#f6f7f9; --coast:#8a94a7; --borders:#cfd6e1; --saa:#d94350; --saa-soft:rgba(217,67,80,.15);
   --orbit1:#2a78d6; --orbit2:#eb6834; --orbit3:#1baf7a; --orbit4:#6250d6; --orbit5:#e87ba4;
   box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);

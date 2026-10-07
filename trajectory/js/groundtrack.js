@@ -1,8 +1,8 @@
-// Ground-track page: the satellite over Earth, like compton_satellite_earth_trajectory.py
+// Ground-track page: the satellite's track over Earth, with Earth's shadow and the SAA
 
 // ---------- track ----------
-const SAA = { lon: -50, lat: -26, a: 45, b: 18 };   // approximate SAA ellipse at ~500 km [deg], as SAA in the Python script
-const TRACK_STEP = 10;                              // s, as STEP_S in the Python script
+const SAA = { lon: -50, lat: -26, a: 45, b: 18 };   // approximate SAA ellipse at ~500 km: centre and semi-axes [deg]
+const TRACK_STEP = 10;                              // time step along the track [s]
 const inSAA = (lat, lon) => (wrap180(lon - SAA.lon) / SAA.a) ** 2 + ((lat - SAA.lat) / SAA.b) ** 2 <= 1;
 // near the launch time the track starts exactly at launch, so the ticks are minutes since launch
 const trackStart = ms => Math.abs(ms - O.t0) < 60e3 ? O.t0 : ms;
@@ -168,7 +168,7 @@ earthCv.addEventListener('pointerleave', () => $('earthHover').textContent = EAR
 $('earthHover').textContent = EARTH_HINT;
 
 // ---------- save ----------
-// the same map at a fixed size, with a title and a legend box like the Python figure
+// the same map at a fixed size, with a title and a legend box
 function saveGroundTrack(){
   const ms = trackStart(nowMs()), trk = groundTrack(ms, S.nOrbits), stats = orbitStats(trk, S.nOrbits), atLaunch = ms === O.t0;
   const w = 1200, h = 618, top = 34, scale = 2, d = new Date(ms), l = new Date(O.t0), bj = new Date(O.t0 + 8 * 3.6e6);
